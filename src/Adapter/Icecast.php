@@ -12,9 +12,9 @@ class Icecast extends AdapterAbstract
     {
         if (!empty($payload)) {
             if (substr($payload, 0, 1) === '<') {
-                return $this->_getXmlNowPlaying($mount, $payload);
+                return $this->_getXmlNowPlaying($payload, $mount);
             } else {
-                return $this->_getJsonNowPlaying($mount, $payload);
+                return $this->_getJsonNowPlaying($payload, $mount);
             }
         }
 
@@ -30,7 +30,7 @@ class Icecast extends AdapterAbstract
                 throw new Exception('Remote server returned empty response.');
             }
 
-            return $this->_getXmlNowPlaying($mount, $payload);
+            return $this->_getXmlNowPlaying($payload, $mount);
         }
 
         // Default to using the public JSON feed otherwise.
@@ -40,7 +40,7 @@ class Icecast extends AdapterAbstract
             throw new Exception('Remote server returned empty response.');
         }
 
-        return $this->_getJsonNowPlaying($mount, $payload);
+        return $this->_getJsonNowPlaying($payload, $mount);
     }
 
     /**
