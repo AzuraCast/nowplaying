@@ -129,7 +129,7 @@ class Icecast extends AdapterAbstract
     /**
      * @inheritdoc
      */
-    public function getClients($mount = null): array
+    public function getClients($mount = null, $unique_only = false): array
     {
         if (empty($mount)) {
             throw new Exception('This adapter requires a mount point name.');
@@ -161,6 +161,8 @@ class Icecast extends AdapterAbstract
             }
         }
 
-        return $clients;
+        return $unique_only
+            ? $this->getUniqueListeners($clients)
+            : $clients;
     }
 }

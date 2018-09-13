@@ -131,11 +131,12 @@ abstract class AdapterAbstract
     /**
      * Return detailed information about the currently connected listeners.
      *
-     * @param string|null The mount point (or Stream ID/SID) to pull detailed information about.
+     * @param string|null $mount The mount point (or Stream ID/SID) to pull detailed information about.
+     * @param bool $unique_only Whether to group together users with the same IP and user-agent as one "unique" listener.
      * @return array
      * @throws Exception
      */
-    abstract public function getClients($mount = null): array;
+    abstract public function getClients($mount = null, $unique_only = false): array;
 
     /**
      * Given a single title or array, compose a "now playing" current song result.
@@ -236,5 +237,24 @@ abstract class AdapterAbstract
         }
 
         return $response->getBody()->getContents();
+    }
+
+    /**
+     * Given a list of clients, return only ones with unique UserAgent and IP combinations.
+     *
+     * @param $clients
+     * @return array
+     */
+    protected function getUniqueListeners($clients): array
+    {
+        $unique_clients = [];
+        foreach($clients as $client) {
+            $client_hash = md5($client['ip'].$client['user_agent']);
+            if (!isset($unique_clients[$client_hash])) {
+                $unique_clients[$client_hash] = $client;
+            }
+        }
+
+        return array_values($unique_clients);
     }
 }

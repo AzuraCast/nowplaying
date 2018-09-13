@@ -49,7 +49,7 @@ class SHOUTcast2 extends AdapterAbstract
     /**
      * @inheritdoc
      */
-    public function getClients($mount = null): array
+    public function getClients($mount = null, $unique_only = false): array
     {
         $return_raw = $this->getUrl($this->getBaseUrl()->withPath('/admin.cgi'), [
             'query' => [
@@ -66,7 +66,7 @@ class SHOUTcast2 extends AdapterAbstract
 
         $listeners = json_decode($return_raw, true);
 
-        return array_map(function($listener) {
+        $clients = array_map(function($listener) {
             return [
                 'uid' => $listener['uid'],
                 'ip' => $listener['xff'] ?: $listener['hostname'],
@@ -74,5 +74,9 @@ class SHOUTcast2 extends AdapterAbstract
                 'connected_seconds' => $listener['connecttime'],
             ];
         }, (array)$listeners);
+
+        return $unique_only
+            ? $this->getUniqueListeners($clients)
+            : $clients;
     }
 }
