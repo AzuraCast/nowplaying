@@ -10,20 +10,22 @@ class SHOUTcast2 extends AdapterAbstract
      */
     public function getNowPlaying($mount = null, $payload = null): array
     {
-        $query = [];
-        if (!empty($mount)) {
-            $query['sid'] = $mount;
+        if (empty($payload)) {
+            $query = [];
+            if (!empty($mount)) {
+                $query['sid'] = $mount;
+            }
+
+            $payload = $this->getUrl($this->getBaseUrl()->withPath('/stats'), [
+                'query' => $query,
+            ]);
+
+            if (empty($payload)) {
+                throw new Exception('Remote server returned empty response.');
+            }
         }
 
-        $return_raw = $this->getUrl($this->getBaseUrl()->withPath('/stats'), [
-            'query' => $query,
-        ]);
-
-        if (empty($return_raw)) {
-            throw new Exception('Remote server returned empty response.');
-        }
-
-        $xml = simplexml_load_string($return_raw);
+        $xml = simplexml_load_string($payload);
 
         $np = self::NOWPLAYING_EMPTY;
 
