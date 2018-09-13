@@ -1,0 +1,11 @@
+# Junk/cache files.
+*Thumbs.db
+tmp/cache/*---*
+*.DS_Store
+*.apdisk
+.vagrant
+.idea
+/ubuntu-*-console.log
+
+# Composer-generated content
+/vendor/
