@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5844c56a2c80ce922732f6c66cb5f606",
+    "content-hash": "3bff99eed74b171fb87989c0cff756e8",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -236,7 +236,9 @@
                 "response"
             ],
             "time": "2016-08-06T14:39:51+00:00"
-        },
+        }
+    ],
+    "packages-dev": [
         {
             "name": "roave/security-advisories",
             "version": "dev-master",
@@ -399,7 +401,6 @@
             "time": "2018-08-14T15:39:17+00:00"
         }
     ],
-    "packages-dev": [],
     "aliases": [],
     "minimum-stability": "dev",
     "stability-flags": {

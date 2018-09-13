@@ -1,0 +1,12 @@
+version: '2.2'
+
+services:
+  cli:
+    image: composer:latest
+    volumes:
+      - ./:/app
+      - composer_data:/tmp
+    command: composer install --ignore-platform-reqs --no-scripts
+
+volumes:
+  composer_data: {}
