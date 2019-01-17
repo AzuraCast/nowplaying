@@ -11,11 +11,10 @@ class Icecast extends AdapterAbstract
     public function getNowPlaying($mount = null, $payload = null): array
     {
         if (!empty($payload)) {
-            if (substr($payload, 0, 1) === '<') {
+            if (strpos($payload, '<') === 0) {
                 return $this->_getXmlNowPlaying($payload, $mount);
-            } else {
-                return $this->_getJsonNowPlaying($payload, $mount);
             }
+            return $this->_getJsonNowPlaying($payload, $mount);
         }
 
         $base_url = $this->getBaseUrl();
@@ -85,7 +84,10 @@ class Icecast extends AdapterAbstract
         if (!empty($mount) && isset($np_return[$mount])) {
             return $np_return[$mount];
         }
-        return array_shift($np_return);
+
+        return (count($np_return) > 0)
+            ? array_shift($np_return)
+            : self::NOWPLAYING_EMPTY;
     }
 
     /**
@@ -123,7 +125,10 @@ class Icecast extends AdapterAbstract
         if (!empty($mount) && isset($np_return[$mount])) {
             return $np_return[$mount];
         }
-        return array_shift($np_return);
+
+        return (count($np_return) > 0)
+            ? array_shift($np_return)
+            : self::NOWPLAYING_EMPTY;
     }
 
     /**
