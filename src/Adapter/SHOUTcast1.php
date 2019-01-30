@@ -38,7 +38,7 @@ class SHOUTcast1 extends AdapterAbstract
     /**
      * @inheritdoc
      */
-    public function getClients($mount = null): array
+    public function getClients($mount = null, $unique_only = false): array
     {
         throw new Exception('This feature is not implemented for this adapter.');
     }
