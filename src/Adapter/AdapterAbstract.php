@@ -72,7 +72,7 @@ abstract class AdapterAbstract
     }
 
     /**
-     * @param $base_url
+     * @param string|Uri $base_url
      */
     public function setBaseUrl($base_url): void
     {
@@ -97,7 +97,7 @@ abstract class AdapterAbstract
     }
 
     /**
-     * @param $admin_password
+     * @param string $admin_password
      */
     public function setAdminPassword($admin_password): void
     {
@@ -141,7 +141,7 @@ abstract class AdapterAbstract
     /**
      * Given a single title or array, compose a "now playing" current song result.
      *
-     * @param $raw_data
+     * @param array|string $raw_data
      * @param string $delimiter
      * @return array
      */
@@ -165,7 +165,7 @@ abstract class AdapterAbstract
     /**
      * Return the artist and title from a string in the format "Artist - Title"
      *
-     * @param $song_string
+     * @param string $song_string
      * @param string $delimiter
      * @return array
      */
@@ -215,7 +215,7 @@ abstract class AdapterAbstract
     /**
      * Fetch a remote URL.
      *
-     * @param $url
+     * @param string $url
      * @param array|null $options
      * @return string
      * @throws Exception
@@ -242,7 +242,7 @@ abstract class AdapterAbstract
     /**
      * Given a list of clients, return only ones with unique UserAgent and IP combinations.
      *
-     * @param $clients
+     * @param array $clients
      * @return array
      */
     protected function getUniqueListeners($clients): array

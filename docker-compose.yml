@@ -2,11 +2,11 @@ version: '2.2'
 
 services:
   cli:
-    image: composer:latest
+    image: azuracast/azuracast_testing:latest
     volumes:
       - ./:/app
       - composer_data:/tmp
-    command: composer install --ignore-platform-reqs --no-scripts
+    command: composer test
 
 volumes:
   composer_data: {}
