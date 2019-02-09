@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying;
 
-class Exception extends \Exception
+final class Exception extends \Exception
 {
 
 }

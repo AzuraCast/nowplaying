@@ -3,7 +3,7 @@ namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
 
-class SHOUTcast1 extends AdapterAbstract
+final class SHOUTcast1 extends AdapterAbstract
 {
     /**
      * @inheritdoc

@@ -3,7 +3,7 @@ namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
 
-class Icecast extends AdapterAbstract
+final class Icecast extends AdapterAbstract
 {
     /**
      * @inheritdoc

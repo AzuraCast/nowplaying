@@ -5,7 +5,7 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\Uri;
 use NowPlaying\Exception;
 
-abstract class AdapterAbstract
+abstract class AdapterAbstract implements AdapterInterface
 {
     public const NOWPLAYING_EMPTY = [
         'current_song' => [
