@@ -257,4 +257,18 @@ abstract class AdapterAbstract implements AdapterInterface
 
         return array_values($unique_clients);
     }
+
+    /**
+     * Given a raw XML string, sanitize it for invalid characters and parse it with SimpleXML.
+     *
+     * @param string $xmlString
+     * @return \SimpleXMLElement
+     */
+    protected function getSimpleXml($xmlString): \SimpleXMLElement
+    {
+        $xmlString = html_entity_decode($xmlString);
+        $xmlString = preg_replace('/&(?!#?[a-z0-9]+;)/', '&amp;', $xmlString);
+
+        return simplexml_load_string($xmlString);
+    }
 }

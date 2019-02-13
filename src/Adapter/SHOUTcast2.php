@@ -1,8 +1,6 @@
 <?php
 namespace NowPlaying\Adapter;
 
-use DiDom\Document;
-use DiDom\Query;
 use NowPlaying\Exception;
 
 final class SHOUTcast2 extends AdapterAbstract
@@ -27,22 +25,21 @@ final class SHOUTcast2 extends AdapterAbstract
             }
         }
 
-        $xml = new Document();
-        $xml->loadXml($payload);
+        $xml = $this->getSimpleXml($payload);
 
         $np = self::NOWPLAYING_EMPTY;
 
         // Increment listener counts in the now playing data.
-        $u_list = (int)$xml->first('./UNIQUELISTENERS', Query::TYPE_XPATH)->text();
-        $c_list = (int)$xml->first('./CURRENTLISTENERS', Query::TYPE_XPATH)->text();
+        $u_list = (int)$xml->UNIQUELISTENERS;
+        $c_list = (int)$xml->CURRENTLISTENERS;
 
-        $np['current_song'] = $this->getSongFromString((string)$xml->first('./SONGTITLE', Query::TYPE_XPATH)->text(), '-');
+        $np['current_song'] = $this->getSongFromString((string)$xml->SONGTITLE, '-');
 
         $np['meta']['status'] = !empty($np['current_song']['text'])
             ? 'online'
             : 'offline';
-        $np['meta']['bitrate'] = (int)$xml->first('./BITRATE', Query::TYPE_XPATH)->text();
-        $np['meta']['format'] = (string)$xml->first('./CONTENT', Query::TYPE_XPATH)->text();
+        $np['meta']['bitrate'] = (int)$xml->BITRATE;
+        $np['meta']['format'] = (string)$xml->CONTENT;
 
         $np['listeners']['current'] = $c_list;
         $np['listeners']['unique'] = $u_list;

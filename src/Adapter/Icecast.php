@@ -1,8 +1,6 @@
 <?php
 namespace NowPlaying\Adapter;
 
-use DiDom\Document;
-use DiDom\Query;
 use NowPlaying\Exception;
 
 final class Icecast extends AdapterAbstract
@@ -99,36 +97,38 @@ final class Icecast extends AdapterAbstract
      */
     protected function _getXmlNowPlaying($payload, $mount = null): array
     {
-        $document = new Document;
-        $document->loadXml($payload);
+        $xml = $this->getSimpleXml($payload);
 
-        // Check for a specific source if one is provided.
-        $mount_selector = (null !== $mount)
-            ? '/icestats/source[@mount=\''.$mount.'\']'
-            : '/icestats/source';
+        $np_return = [];
 
-        if (!$document->has($mount_selector, Query::TYPE_XPATH)) {
-            return self::NOWPLAYING_EMPTY;
+        foreach($xml->source as $mount_row) {
+            $np = self::NOWPLAYING_EMPTY;
+
+            $np['current_song'] = $this->getCurrentSong([
+                'artist' => (string)$mount_row->artist,
+                'title' => (string)$mount_row->title
+            ], ' - ');
+
+            $np['meta']['status'] = !empty($np['current_song']['text'])
+                ? 'online'
+                : 'offline';
+            $np['meta']['bitrate'] = (int)$mount_row->bitrate;
+            $np['meta']['format'] = (string)$mount_row->server_type;
+
+            $np['listeners']['current'] = (int)$mount_row->listeners;
+            $np['listeners']['total'] = (int)$mount_row->listeners;
+
+            $mount_name = (string)$mount_row['mount'];
+            $np_return[$mount_name] = $np;
         }
 
-        $np = self::NOWPLAYING_EMPTY;
-        $mount_row = $document->first($mount_selector, Query::TYPE_XPATH);
+        if (!empty($mount) && isset($np_return[$mount])) {
+            return $np_return[$mount];
+        }
 
-        $np['current_song'] = $this->getCurrentSong([
-            'artist' => $mount_row->first('./artist', Query::TYPE_XPATH)->text(),
-            'title' => $mount_row->first('./title', Query::TYPE_XPATH)->text()
-        ], ' - ');
-
-        $np['meta']['status'] = !empty($np['current_song']['text'])
-            ? 'online'
-            : 'offline';
-        $np['meta']['bitrate'] = (int)$mount_row->first('./bitrate', Query::TYPE_XPATH)->text();
-        $np['meta']['format'] = $mount_row->first('./server_type', Query::TYPE_XPATH)->text();
-
-        $np['listeners']['current'] = (int)$mount_row->first('./listeners', Query::TYPE_XPATH)->text();
-        $np['listeners']['total'] = $np['listeners']['current'];
-
-        return $np;
+        return (count($np_return) > 0)
+            ? array_shift($np_return)
+            : self::NOWPLAYING_EMPTY;
     }
 
     /**
@@ -140,34 +140,30 @@ final class Icecast extends AdapterAbstract
             throw new Exception('This adapter requires a mount point name.');
         }
 
-        $payload = $this->getUrl($this->getBaseUrl()->withPath('/admin/listclients'), [
+        $return_raw = $this->getUrl($this->getBaseUrl()->withPath('/admin/listclients'), [
             'query' => [
                 'mount' => $mount,
             ],
             'auth' => ['admin', $this->getAdminPassword()],
         ]);
 
-        if (empty($payload)) {
+        if (empty($return_raw)) {
             throw new Exception('Remote server returned an empty response.');
         }
 
-        $document = new Document;
-        $document->loadXml($payload);
-
-        $source = $document->first('/icestats/source', Query::TYPE_XPATH);
-
-        if (null === $source || !$source->has('./listener', Query::TYPE_XPATH)) {
-            return [];
-        }
+        $xml = $this->getSimpleXml($return_raw);
 
         $clients = [];
-        foreach($source->find('./listener', Query::TYPE_XPATH) as $listener) {
-            $clients[] = [
-                'uid' => (string)$listener->first('./ID', Query::TYPE_XPATH)->text(),
-                'ip' => (string)$listener->first('./IP', Query::TYPE_XPATH)->text(),
-                'user_agent' => (string)$listener->first('./UserAgent', Query::TYPE_XPATH)->text(),
-                'connected_seconds' => (int)$listener->first('./Connected', Query::TYPE_XPATH)->text(),
-            ];
+
+        if ((int)$xml->source->listeners > 0) {
+            foreach($xml->source->listener as $listener) {
+                $clients[] = [
+                    'uid' => (string)$listener->ID,
+                    'ip' => (string)$listener->IP,
+                    'user_agent' => (string)$listener->UserAgent,
+                    'connected_seconds' => (int)$listener->Connected,
+                ];
+            }
         }
 
         return $unique_only

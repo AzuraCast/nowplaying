@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e9b502e5657bed849a85d1109ece5b1e",
+    "content-hash": "b1633a9a5120d5384c6f7ef95363ed42",
     "packages": [
         {
             "name": "guzzlehttp/guzzle",
@@ -188,55 +188,6 @@
                 "url"
             ],
             "time": "2018-12-04T20:46:45+00:00"
-        },
-        {
-            "name": "imangazaliev/didom",
-            "version": "1.14.1",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/Imangazaliev/DiDOM.git",
-                "reference": "a8389cc26897f6bb8843363b4ea16e7ef16fb3c3"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/Imangazaliev/DiDOM/zipball/a8389cc26897f6bb8843363b4ea16e7ef16fb3c3",
-                "reference": "a8389cc26897f6bb8843363b4ea16e7ef16fb3c3",
-                "shasum": ""
-            },
-            "require": {
-                "ext-dom": "*",
-                "ext-iconv": "*",
-                "php": ">=5.4"
-            },
-            "require-dev": {
-                "friendsofphp/php-cs-fixer": "2.9",
-                "phpunit/phpunit": "^4.8"
-            },
-            "type": "library",
-            "autoload": {
-                "psr-4": {
-                    "DiDom\\": "src/DiDom/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Imangazaliev Muhammad",
-                    "email": "imangazalievm@gmail.com"
-                }
-            ],
-            "description": "Simple and fast HTML parser",
-            "homepage": "https://github.com/Imangazaliev/DiDOM",
-            "keywords": [
-                "didom",
-                "html",
-                "parser",
-                "xml"
-            ],
-            "time": "2019-01-17T11:01:36+00:00"
         },
         {
             "name": "psr/http-message",
