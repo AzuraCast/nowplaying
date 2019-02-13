@@ -99,36 +99,35 @@ final class Icecast extends AdapterAbstract
     {
         $xml = $this->getSimpleXml($payload);
 
-        $np_return = [];
+        $mount_selector = (null !== $mount)
+            ? '(/icestats/source[@mount=\''.$mount.'\'])[1]'
+            : '(/icestats/source)[1]';
 
-        foreach($xml->source as $mount_row) {
-            $np = self::NOWPLAYING_EMPTY;
+        $mount = $xml->xpath($mount_selector);
 
-            $np['current_song'] = $this->getCurrentSong([
-                'artist' => (string)$mount_row->artist,
-                'title' => (string)$mount_row->title
-            ], ' - ');
-
-            $np['meta']['status'] = !empty($np['current_song']['text'])
-                ? 'online'
-                : 'offline';
-            $np['meta']['bitrate'] = (int)$mount_row->bitrate;
-            $np['meta']['format'] = (string)$mount_row->server_type;
-
-            $np['listeners']['current'] = (int)$mount_row->listeners;
-            $np['listeners']['total'] = (int)$mount_row->listeners;
-
-            $mount_name = (string)$mount_row['mount'];
-            $np_return[$mount_name] = $np;
+        if (empty($mount)) {
+            return self::NOWPLAYING_EMPTY;
         }
 
-        if (!empty($mount) && isset($np_return[$mount])) {
-            return $np_return[$mount];
-        }
+        $mount_row = $mount[0];
 
-        return (count($np_return) > 0)
-            ? array_shift($np_return)
-            : self::NOWPLAYING_EMPTY;
+        $np = self::NOWPLAYING_EMPTY;
+
+        $np['current_song'] = $this->getCurrentSong([
+            'artist' => (string)$mount_row->artist,
+            'title' => (string)$mount_row->title
+        ], ' - ');
+
+        $np['meta']['status'] = !empty($np['current_song']['text'])
+            ? 'online'
+            : 'offline';
+        $np['meta']['bitrate'] = (int)$mount_row->bitrate;
+        $np['meta']['format'] = (string)$mount_row->server_type;
+
+        $np['listeners']['current'] = (int)$mount_row->listeners;
+        $np['listeners']['total'] = (int)$mount_row->listeners;
+
+        return $np;
     }
 
     /**
