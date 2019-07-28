@@ -272,7 +272,7 @@ abstract class AdapterAbstract implements AdapterInterface
         libxml_use_internal_errors(true);
         $xml = simplexml_load_string($xmlString);
 
-        if ($sxe === false) {
+        if (false === $xml) {
             $xml_errors = [];
             foreach(libxml_get_errors() as $error) {
                 $xml_errors[] = $error->message;
