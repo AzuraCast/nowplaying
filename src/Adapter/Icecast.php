@@ -29,7 +29,10 @@ final class Icecast extends AdapterAbstract
                 throw new Exception('Remote server returned empty response.');
             }
 
-            return $this->_getXmlNowPlaying($payload, $mount);
+            // If the XML doesn't parse for any reason, fail back to the JSON below.
+            try {
+                return $this->_getXmlNowPlaying($payload, $mount);
+            } catch(\TypeError $e) {}
         }
 
         // Default to using the public JSON feed otherwise.
