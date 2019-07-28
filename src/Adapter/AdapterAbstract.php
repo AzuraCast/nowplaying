@@ -278,6 +278,8 @@ abstract class AdapterAbstract implements AdapterInterface
                 $xml_errors[] = $error->message;
             }
 
+            libxml_clear_errors();
+
             throw new Exception('XML parsing errors: '.implode(', ', $xml_errors));
         }
 
