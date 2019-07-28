@@ -269,6 +269,18 @@ abstract class AdapterAbstract implements AdapterInterface
         $xmlString = html_entity_decode($xmlString);
         $xmlString = preg_replace('/&(?!#?[a-z0-9]+;)/', '&amp;', $xmlString);
 
-        return simplexml_load_string($xmlString);
+        libxml_use_internal_errors(true);
+        $xml = simplexml_load_string($xmlString);
+
+        if ($sxe === false) {
+            $xml_errors = [];
+            foreach(libxml_get_errors() as $error) {
+                $xml_errors[] = $error->message;
+            }
+
+            throw new Exception('XML parsing errors: '.implode(', ', $xml_errors));
+        }
+
+        return $xml;
     }
 }

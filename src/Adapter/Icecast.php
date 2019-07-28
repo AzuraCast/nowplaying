@@ -32,7 +32,7 @@ final class Icecast extends AdapterAbstract
             // If the XML doesn't parse for any reason, fail back to the JSON below.
             try {
                 return $this->_getXmlNowPlaying($payload, $mount);
-            } catch(\TypeError $e) {}
+            } catch(Exception $e) {}
         }
 
         // Default to using the public JSON feed otherwise.
