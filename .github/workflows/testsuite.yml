@@ -1,0 +1,12 @@
+name: Test Suite
+
+on: [push]
+
+jobs:
+  test_suite:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    
+    - name: Run test suite
+      uses: docker://azuracast/azuracast-testing:latest
