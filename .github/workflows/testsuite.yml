@@ -9,4 +9,4 @@ jobs:
     - uses: actions/checkout@v1
     
     - name: Run test suite
-      uses: docker://azuracast/azuracast-testing:latest
+      uses: docker://azuracast/azuracast_testing:latest
