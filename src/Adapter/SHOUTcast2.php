@@ -16,9 +16,22 @@ final class SHOUTcast2 extends AdapterAbstract
                 $query['sid'] = $mount;
             }
 
-            $payload = $this->getUrl($this->getBaseUrl()->withPath('/stats'), [
+            $baseUrl = $this->getBaseUrl();
+            $urlOptions = [
                 'query' => $query,
-            ]);
+            ];
+
+            if (!empty($this->admin_password)) {
+                $url = $baseUrl->withPath('/admin.cgi');
+                $urlOptions['query']['mode'] = 'viewxml';
+                $urlOptions['query']['page'] = '7';
+
+                $urlOptions['auth'] = ['admin', $this->getAdminPassword()];
+            } else {
+                $url = $baseUrl->withPath('/stats');
+            }
+
+            $payload = $this->getUrl($url, $urlOptions);
 
             if (empty($payload)) {
                 throw new Exception('Remote server returned empty response.');
