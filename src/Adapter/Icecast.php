@@ -1,4 +1,5 @@
 <?php
+
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
@@ -66,7 +67,7 @@ final class Icecast extends AdapterAbstract
         }
 
         $np_return = [];
-        foreach($mounts as $mount_row) {
+        foreach ($mounts as $mount_row) {
             $np = self::NOWPLAYING_EMPTY;
 
             $np['current_song'] = $this->getCurrentSong($mount_row, ' - ');
@@ -77,8 +78,13 @@ final class Icecast extends AdapterAbstract
             $np['meta']['bitrate'] = $mount_row['bitrate'];
             $np['meta']['format'] = $mount_row['server_type'];
 
-            $np['listeners']['current'] = (int)$mount_row['listeners'];
-            $np['listeners']['total'] = (int)$mount_row['listeners'];
+            $np['listeners']['current'] = (int) $mount_row['listeners'];
+            $np['listeners']['total'] = (int) $mount_row['listeners'];
+
+            // Count unique listeners
+            $mount_name = $mount ?? '';
+            $totalUnique = \count($this->getClients($mount_name, true)) ?? 0;
+            $np['listeners']['unique'] = $totalUnique;
 
             $mount_name = parse_url($mount_row['listenurl'], \PHP_URL_PATH);
             $np_return[$mount_name] = $np;
@@ -103,7 +109,7 @@ final class Icecast extends AdapterAbstract
         $xml = $this->getSimpleXml($payload);
 
         $mount_selector = (null !== $mount)
-            ? '(/icestats/source[@mount=\''.$mount.'\'])[1]'
+            ? '(/icestats/source[@mount=\'' . $mount . '\'])[1]'
             : '(/icestats/source)[1]';
 
         $mount = $xml->xpath($mount_selector);
@@ -117,18 +123,23 @@ final class Icecast extends AdapterAbstract
         $np = self::NOWPLAYING_EMPTY;
 
         $np['current_song'] = $this->getCurrentSong([
-            'artist' => (string)$mount_row->artist,
-            'title' => (string)$mount_row->title
+            'artist' => (string) $mount_row->artist,
+            'title' => (string) $mount_row->title
         ], ' - ');
 
         $np['meta']['status'] = !empty($np['current_song']['text'])
             ? 'online'
             : 'offline';
-        $np['meta']['bitrate'] = (int)$mount_row->bitrate;
-        $np['meta']['format'] = (string)$mount_row->server_type;
+        $np['meta']['bitrate'] = (int) $mount_row->bitrate;
+        $np['meta']['format'] = (string) $mount_row->server_type;
 
-        $np['listeners']['current'] = (int)$mount_row->listeners;
-        $np['listeners']['total'] = (int)$mount_row->listeners;
+        $np['listeners']['current'] = (int) $mount_row->listeners;
+        $np['listeners']['total'] = (int) $mount_row->listeners;
+
+        // Count unique listeners
+        $mount_name = $mount_row['mount']->__toString() ?? '';
+        $totalUnique = \count($this->getClients($mount_name, true)) ?? 0;
+        $np['listeners']['unique'] = $totalUnique;
 
         return $np;
     }
@@ -157,13 +168,13 @@ final class Icecast extends AdapterAbstract
 
         $clients = [];
 
-        if ((int)$xml->source->listeners > 0) {
-            foreach($xml->source->listener as $listener) {
+        if ((int) $xml->source->Listeners > 0) {
+            foreach ($xml->source->listener as $listener) {
                 $clients[] = [
-                    'uid' => (string)$listener->ID,
-                    'ip' => (string)$listener->IP,
-                    'user_agent' => (string)$listener->UserAgent,
-                    'connected_seconds' => (int)$listener->Connected,
+                    'uid' => (string) $listener->ID,
+                    'ip' => (string) $listener->IP,
+                    'user_agent' => (string) $listener->UserAgent,
+                    'connected_seconds' => (int) $listener->Connected,
                 ];
             }
         }
