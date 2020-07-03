@@ -30,13 +30,19 @@ final class CurrentSong
             if (\count($string_parts) === 1) {
                 $title = $text;
             } else {
-                $title = trim(array_pop($string_parts));
-                $artist = trim(implode($delimiter, $string_parts));
+                $title = array_pop($string_parts);
+                $artist = implode($delimiter, $string_parts);
             }
         }
 
-        $this->text = $text;
-        $this->title = $title;
-        $this->artist = $artist;
+        $this->text = $this->cleanUpString($text);
+        $this->title = $this->cleanUpString($title);
+        $this->artist = $this->cleanUpString($artist);
+    }
+
+    protected function cleanUpString(string $value): string
+    {
+        $value = htmlspecialchars_decode($value);
+        return trim($value);
     }
 }
