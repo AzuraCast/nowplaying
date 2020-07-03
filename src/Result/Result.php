@@ -9,6 +9,7 @@ final class Result
 
     public Meta $meta;
 
+    /** @var null|Client[]  */
     public ?array $clients = null;
 
     public function toArray(): array
