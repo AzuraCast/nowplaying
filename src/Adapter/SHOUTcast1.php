@@ -2,43 +2,41 @@
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
+use NowPlaying\Result\CurrentSong;
+use NowPlaying\Result\Listeners;
+use NowPlaying\Result\Meta;
+use NowPlaying\Result\Result;
 
 final class SHOUTcast1 extends AdapterAbstract
 {
-    /**
-     * @inheritdoc
-     */
-    public function getNowPlaying($mount = null, $payload = null): array
+    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
     {
-        $return_raw = $this->getUrl($this->getBaseUrl()->withPath('/7.html'));
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUri->withPath('/7.html')
+        );
+        $returnRaw = $this->getUrl($request);
 
-        if (empty($return_raw)) {
+        if (empty($returnRaw)) {
             throw new Exception('Remote server returned empty response.');
         }
 
-        preg_match("/<body.*>(.*)<\/body>/smU", $return_raw, $return);
+        preg_match("/<body.*>(.*)<\/body>/smU", $returnRaw, $return);
         [$current_listeners, , , , $unique_listeners, $bitrate, $title] = explode(',', $return[1], 7);
 
         // Increment listener counts in the now playing data.
-        $np = self::NOWPLAYING_EMPTY;
-
-        $np['listeners']['current'] += (int)$current_listeners;
-        $np['listeners']['unique'] += (int)$unique_listeners;
-        $np['listeners']['total'] += $this->getListenerCount((int)$unique_listeners, (int)$current_listeners);
-
-        $np['current_song'] = $this->getSongFromString($title, '-');
-        $np['meta']['status'] = !empty($np['current_song']['text'])
-            ? 'online'
-            : 'offline';
-        $np['meta']['bitrate'] = $bitrate;
+        $np = new Result;
+        $np->currentSong = new CurrentSong($title);
+        $np->listeners = new Listeners($current_listeners, $unique_listeners);
+        $np->meta = new Meta(
+            !empty($np->currentSong->text),
+            $bitrate
+        );
 
         return $np;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getClients($mount = null, $unique_only = false): array
+    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
     {
         throw new Exception('This feature is not implemented for this adapter.');
     }

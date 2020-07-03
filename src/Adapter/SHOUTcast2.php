@@ -2,95 +2,100 @@
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
+use NowPlaying\Result\Client;
+use NowPlaying\Result\CurrentSong;
+use NowPlaying\Result\Listeners;
+use NowPlaying\Result\Meta;
+use NowPlaying\Result\Result;
 
 final class SHOUTcast2 extends AdapterAbstract
 {
-    /**
-     * @inheritdoc
-     */
-    public function getNowPlaying($mount = null, $payload = null): array
+    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
     {
+        $query = [];
+        if (!empty($mount)) {
+            $query['sid'] = $mount;
+        }
+
+        if (!empty($this->admin_password)) {
+            $query['mode'] = 'viewxml';
+            $query['page'] = '7';
+
+            $request = $this->requestFactory->createRequest(
+                'GET',
+                $this->baseUri->withPath('/admin.cgi')
+                    ->withQuery(http_build_query($query))
+            );
+        } else {
+            $request = $this->requestFactory->createRequest(
+                'GET',
+                $this->baseUri->withPath('/stats')
+                    ->withQuery(http_build_query($query))
+            );
+        }
+
+        $payload = $this->getUrl($request);
         if (empty($payload)) {
-            $query = [];
-            if (!empty($mount)) {
-                $query['sid'] = $mount;
-            }
-
-            $baseUrl = $this->getBaseUrl();
-            $urlOptions = [
-                'query' => $query,
-            ];
-
-            if (!empty($this->admin_password)) {
-                $url = $baseUrl->withPath('/admin.cgi');
-                $urlOptions['query']['mode'] = 'viewxml';
-                $urlOptions['query']['page'] = '7';
-
-                $urlOptions['auth'] = ['admin', $this->getAdminPassword()];
-            } else {
-                $url = $baseUrl->withPath('/stats');
-            }
-
-            $payload = $this->getUrl($url, $urlOptions);
-
-            if (empty($payload)) {
-                throw new Exception('Remote server returned empty response.');
-            }
+            throw new Exception('Remote server returned empty response.');
         }
 
         $xml = $this->getSimpleXml($payload);
 
-        $np = self::NOWPLAYING_EMPTY;
+        $np = new Result;
+        $np->currentSong = new CurrentSong((string)$xml->SONGTITLE);
+        $np->listeners = new Listeners(
+            (int)$xml->CURRENTLISTENERS,
+            (int)$xml->UNIQUELISTENERS
+        );
+        $np->meta = new Meta(
+            !empty($np->currentSong->text),
+            (int)$xml->BITRATE,
+            (string)$xml->CONTENT
+        );
 
-        // Increment listener counts in the now playing data.
-        $u_list = (int)$xml->UNIQUELISTENERS;
-        $c_list = (int)$xml->CURRENTLISTENERS;
+        if ($includeClients) {
+            $np->clients = $this->getClients($mount, true);
 
-        $np['current_song'] = $this->getSongFromString((string)$xml->SONGTITLE, '-');
-
-        $np['meta']['status'] = !empty($np['current_song']['text'])
-            ? 'online'
-            : 'offline';
-        $np['meta']['bitrate'] = (int)$xml->BITRATE;
-        $np['meta']['format'] = (string)$xml->CONTENT;
-
-        $np['listeners']['current'] = $c_list;
-        $np['listeners']['unique'] = $u_list;
-        $np['listeners']['total'] += $this->getListenerCount($u_list, $c_list);
+            $np->listeners = new Listeners(
+                $np->listeners->current,
+                count($np->clients)
+            );
+        }
 
         return $np;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getClients($mount = null, $unique_only = false): array
+    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
     {
-        $return_raw = $this->getUrl($this->getBaseUrl()->withPath('/admin.cgi'), [
-            'query' => [
-                'sid' => (empty($mount)) ? 1 : $mount,
-                'mode' => 'viewjson',
-                'page' => 3,
-            ],
-            'auth' => ['admin', $this->getAdminPassword()],
-        ]);
+        $query = [
+            'sid' => (empty($mount)) ? 1 : $mount,
+            'mode' => 'viewjson',
+            'page' => 3,
+        ];
 
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUri->withPath('/admin.cgi')
+                ->withQuery(http_build_query($query))
+        );
+
+        $return_raw = $this->getUrl($request);
         if (empty($return_raw)) {
             throw new Exception('Remote server returned empty response.');
         }
 
-        $listeners = json_decode($return_raw, true);
+        $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
 
         $clients = array_map(function($listener) {
-            return [
-                'uid' => $listener['uid'],
-                'ip' => $listener['xff'] ?: $listener['hostname'],
-                'user_agent' => $listener['useragent'],
-                'connected_seconds' => $listener['connecttime'],
-            ];
+            return new Client(
+                $listener['uid'],
+                $listener['xff'] ?: $listener['hostname'],
+                $listener['useragent'],
+                $listener['connecttime']
+            );
         }, (array)$listeners);
 
-        return $unique_only
+        return $uniqueOnly
             ? $this->getUniqueListeners($clients)
             : $clients;
     }

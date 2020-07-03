@@ -2,58 +2,54 @@
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
+use NowPlaying\Result\Client;
+use NowPlaying\Result\CurrentSong;
+use NowPlaying\Result\Listeners;
+use NowPlaying\Result\Meta;
+use NowPlaying\Result\Result;
 
 final class Icecast extends AdapterAbstract
 {
-    /**
-     * @inheritdoc
-     */
-    public function getNowPlaying($mount = null, $payload = null): array
+    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
     {
-        if (!empty($payload)) {
-            if (strpos($payload, '<') === 0) {
-                return $this->_getXmlNowPlaying($payload, $mount);
-            }
-            return $this->_getJsonNowPlaying($payload, $mount);
-        }
+        $np = null;
 
-        $base_url = $this->getBaseUrl();
-
-        // Use the more reliable administrator statistics page if available.
         if (!empty($this->admin_password)) {
-            $payload = $this->getUrl($base_url->withPath('/admin/stats'), [
-                'auth' => ['admin', $this->admin_password],
-            ]);
-
-            if (!$payload) {
-                throw new Exception('Remote server returned empty response.');
-            }
-
             // If the XML doesn't parse for any reason, fail back to the JSON below.
             try {
-                return $this->_getXmlNowPlaying($payload, $mount);
+                $np = $this->getXmlNowPlaying($mount);
             } catch(Exception $e) {}
         }
 
-        // Default to using the public JSON feed otherwise.
-        $payload = $this->getUrl($base_url->withPath('/status-json.xsl'));
+        if (null === $np) {
+            $np = $this->getJsonNowPlaying($mount);
+        }
 
+        if ($includeClients) {
+            $np->clients = $this->getClients($mount, true);
+
+            $np->listeners = new Listeners(
+                $np->listeners->current,
+                count($np->clients)
+            );
+        }
+
+        return $np;
+    }
+
+    protected function getJsonNowPlaying(?string $mount = null): Result
+    {
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUri->withPath('/status-json.xsl')
+        );
+
+        $payload = $this->getUrl($request);
         if (!$payload) {
             throw new Exception('Remote server returned empty response.');
         }
 
-        return $this->_getJsonNowPlaying($payload, $mount);
-    }
-
-    /**
-     * @param string $payload
-     * @param mixed|null $mount
-     * @return array
-     * @throws Exception
-     */
-    protected function _getJsonNowPlaying($payload, $mount = null): array
-    {
-        $return = @json_decode($payload, true);
+        $return = @json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
 
         if (!$return || !isset($return['icestats']['source'])) {
             throw new Exception(sprintf('Invalid response: %s', $payload));
@@ -65,110 +61,117 @@ final class Icecast extends AdapterAbstract
             throw new Exception('Remote server has no mount points.');
         }
 
-        $np_return = [];
-        foreach($mounts as $mount_row) {
-            $np = self::NOWPLAYING_EMPTY;
+        $npReturn = [];
+        foreach($mounts as $row) {
+            $np = new Result;
+            $np->currentSong = new CurrentSong(
+                $row['yp_currently_playing'] ?? '',
+                $row['title'],
+                $row['artist'],
+                ' - '
+            );
+            $np->meta = new Meta(
+                !empty($np->currentSong->text),
+                $row['bitrate'],
+                $row['server_type']
+            );
+            $np->listeners = new Listeners($row['listeners']);
 
-            $np['current_song'] = $this->getCurrentSong($mount_row, ' - ');
-
-            $np['meta']['status'] = !empty($np['current_song']['text'])
-                ? 'online'
-                : 'offline';
-            $np['meta']['bitrate'] = $mount_row['bitrate'];
-            $np['meta']['format'] = $mount_row['server_type'];
-
-            $np['listeners']['current'] = (int)$mount_row['listeners'];
-            $np['listeners']['total'] = (int)$mount_row['listeners'];
-
-            $mount_name = parse_url($mount_row['listenurl'], \PHP_URL_PATH);
-            $np_return[$mount_name] = $np;
+            $mountName = parse_url($row['listenurl'], \PHP_URL_PATH);
+            $npReturn[$mountName] = $np;
         }
 
-        if (!empty($mount) && isset($np_return[$mount])) {
-            return $np_return[$mount];
+        if (!empty($mount) && isset($npReturn[$mount])) {
+            return $npReturn[$mount];
         }
 
-        return (count($np_return) > 0)
-            ? array_shift($np_return)
-            : self::NOWPLAYING_EMPTY;
+        $npAggregate = Result::blank();
+        foreach($npReturn as $np) {
+            $npAggregate->merge($np);
+        }
+        return $npAggregate;
     }
 
-    /**
-     * @param string $payload
-     * @param mixed|null $mount
-     * @return array
-     */
-    protected function _getXmlNowPlaying($payload, $mount = null): array
+    protected function getXmlNowPlaying(?string $mount = null): Result
     {
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUri->withPath('/admin/stats')
+        );
+
+        $payload = $this->getUrl($request);
+        if (!$payload) {
+            throw new Exception('Remote server returned empty response.');
+        }
+
         $xml = $this->getSimpleXml($payload);
 
-        $mount_selector = (null !== $mount)
+        $mountSelector = (null !== $mount)
             ? '(/icestats/source[@mount=\''.$mount.'\'])[1]'
             : '(/icestats/source)[1]';
 
-        $mount = $xml->xpath($mount_selector);
+        $mount = $xml->xpath($mountSelector);
 
         if (empty($mount)) {
-            return self::NOWPLAYING_EMPTY;
+            return Result::blank();
         }
 
-        $mount_row = $mount[0];
+        $row = $mount[0];
 
-        $np = self::NOWPLAYING_EMPTY;
-
-        $np['current_song'] = $this->getCurrentSong([
-            'artist' => (string)$mount_row->artist,
-            'title' => (string)$mount_row->title
-        ], ' - ');
-
-        $np['meta']['status'] = !empty($np['current_song']['text'])
-            ? 'online'
-            : 'offline';
-        $np['meta']['bitrate'] = (int)$mount_row->bitrate;
-        $np['meta']['format'] = (string)$mount_row->server_type;
-
-        $np['listeners']['current'] = (int)$mount_row->listeners;
-        $np['listeners']['total'] = (int)$mount_row->listeners;
+        $np = new Result;
+        $np->currentSong = new CurrentSong(
+            '',
+            (string)$row->artist,
+            (string)$row->title,
+            ' - '
+        );
+        $np->meta = new Meta(
+            !empty($np->currentSong->text),
+            (int)$row->bitrate,
+            (string)$row->server_type
+        );
+        $np->listeners = new Listeners(
+            (int)$row->listeners
+        );
 
         return $np;
     }
 
-    /**
-     * @inheritdoc
-     */
-    public function getClients($mount = null, $unique_only = false): array
+    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
     {
         if (empty($mount)) {
             throw new Exception('This adapter requires a mount point name.');
         }
 
-        $return_raw = $this->getUrl($this->getBaseUrl()->withPath('/admin/listclients'), [
-            'query' => [
-                'mount' => $mount,
-            ],
-            'auth' => ['admin', $this->getAdminPassword()],
-        ]);
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUri->withPath('/admin/listclients')
+                ->withQuery(http_build_query([
+                    'mount' => $mount,
+                ]))
+        );
 
-        if (empty($return_raw)) {
+        $returnRaw = $this->getUrl($request);
+        if (empty($returnRaw)) {
             throw new Exception('Remote server returned an empty response.');
         }
 
-        $xml = $this->getSimpleXml($return_raw);
+        $xml = $this->getSimpleXml($returnRaw);
 
         $clients = [];
 
         if ((int)$xml->source->listeners > 0) {
             foreach($xml->source->listener as $listener) {
-                $clients[] = [
-                    'uid' => (string)$listener->ID,
-                    'ip' => (string)$listener->IP,
-                    'user_agent' => (string)$listener->UserAgent,
-                    'connected_seconds' => (int)$listener->Connected,
-                ];
+                $clients[] = new Client(
+                    (string)$listener->ID,
+                    (string)$listener->IP,
+                    (string)$listener->UserAgent,
+                    (int)$listener->Connected
+                );
             }
         }
 
-        return $unique_only
+        return $uniqueOnly
             ? $this->getUniqueListeners($clients)
             : $clients;
     }
