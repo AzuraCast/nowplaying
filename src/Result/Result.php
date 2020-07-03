@@ -56,6 +56,13 @@ final class Result
         return $dest;
     }
 
+    public function __clone()
+    {
+        $this->listeners = clone $this->listeners;
+        $this->currentSong = clone $this->currentSong;
+        $this->meta = clone $this->meta;
+    }
+
     public static function blank(): self
     {
         $return = new self;
@@ -66,10 +73,50 @@ final class Result
         return $return;
     }
 
-    public function __clone()
+    public static function fromArray(array $np): self
     {
-        $this->listeners = clone $this->listeners;
-        $this->currentSong = clone $this->currentSong;
-        $this->meta = clone $this->meta;
+        $result = new self;
+
+        $currentSong = $np['currentSong'] ?? $np['current_song'] ?? [];
+        $result->currentSong = new CurrentSong(
+            $currentSong['text'] ?? '',
+            $currentSong['title'] ?? '',
+            $currentSong['artist'] ?? ''
+        );
+
+        $listeners = $np['listeners'];
+        $result->listeners = new Listeners(
+            $listeners['current'] ?? 0,
+            $listeners['unique'] ?? null,
+            $listeners['total'] ?? null
+        );
+
+        $meta = $np['meta'];
+        $isOnline = (isset($meta['status']))
+            ? 'online' === $meta['status']
+            : $meta['online'] ?? false;
+
+        $result->meta = new Meta(
+            $isOnline,
+            $meta['bitrate'] ?? null,
+            $meta['format'] ?? null
+        );
+
+        if (isset($np['clients'])) {
+            $clients = [];
+
+            foreach($np['clients'] as $row) {
+                $clients[] = new Client(
+                    $row['uid'],
+                    $row['ip'],
+                    $row['userAgent'] ?? $row['user_agent'],
+                    $row['connectedSeconds'] ?? $row['connected_seconds'] ?? 0
+                );
+            }
+
+            $result->clients = $clients;
+        }
+
+        return $result;
     }
 }
