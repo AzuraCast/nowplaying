@@ -16,7 +16,7 @@ final class CurrentSong
         string $delimiter = '-'
     ) {
         if (empty($text) && (!empty($title) || !empty($artist))) {
-            $text = $title . ' - ' . $artist;
+            $text = $artist . ' - ' . $title;
         } elseif (!empty($text) && empty($title) && empty($artist)) {
             // Fix ShoutCast 2 bug where 3 spaces = " - "
             $text = str_replace('   ', ' - ', $text);
