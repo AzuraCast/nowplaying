@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Result;
 
-class Result
+final class Result
 {
     public CurrentSong $currentSong;
 
@@ -22,8 +22,37 @@ class Result
 
     public function merge(Result $source): self
     {
+        $dest = clone $this;
 
+        // Update track title
+        if (empty($dest->currentSong->text) && !empty($source->currentSong->text)) {
+            $dest->currentSong = clone $source->currentSong;
+        }
 
+        // Sum listeners
+        $currentListeners = $dest->listeners->current + $source->listeners->current;
+        $uniqueListeners = $dest->listeners->unique + $source->listeners->unique;
+        $dest->listeners = new Listeners($currentListeners, $uniqueListeners);
+
+        // Update metadata
+        if (!$dest->meta->online && $source->meta->online) {
+            $dest->meta->online = true;
+        }
+
+        if (empty($dest->meta->format) && !empty($source->meta->format)) {
+            $dest->meta->format = $source->meta->format;
+        }
+        if (empty($dest->meta->bitrate) && !empty($source->meta->bitrate)) {
+            $dest->meta->bitrate = $source->meta->bitrate;
+        }
+
+        // Merge clients
+        if (null !== $source->clients) {
+            $clients = $dest->clients ?? [];
+            $dest->clients = array_merge($clients, $source->clients);
+        }
+
+        return $dest;
     }
 
     public static function blank(): self
@@ -34,5 +63,12 @@ class Result
         $return->meta = new Meta;
 
         return $return;
+    }
+
+    public function __clone()
+    {
+        $this->listeners = clone $this->listeners;
+        $this->currentSong = clone $this->currentSong;
+        $this->meta = clone $this->meta;
     }
 }

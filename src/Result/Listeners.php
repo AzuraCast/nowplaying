@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Result;
 
-class Listeners
+final class Listeners
 {
     public int $current;
 

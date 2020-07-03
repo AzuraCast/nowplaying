@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Result;
 
-class Meta
+final class Meta
 {
     public bool $online;
 

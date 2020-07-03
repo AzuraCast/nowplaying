@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Result;
 
-class Client
+final class Client
 {
     public string $uid;
 

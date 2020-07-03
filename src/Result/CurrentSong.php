@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Result;
 
-class CurrentSong
+final class CurrentSong
 {
     public string $text;
 
