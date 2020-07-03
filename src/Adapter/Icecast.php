@@ -67,8 +67,8 @@ final class Icecast extends AdapterAbstract
             $np = new Result;
             $np->currentSong = new CurrentSong(
                 $row['yp_currently_playing'] ?? '',
-                $row['title'],
-                $row['artist'],
+                $row['title'] ?? '',
+                $row['artist'] ?? '',
                 ' - '
             );
             $np->meta = new Meta(
@@ -120,10 +120,14 @@ final class Icecast extends AdapterAbstract
         $row = $mount[0];
 
         $np = new Result;
+
+
+        $artist = (string)$row->artist;
+        $title = (string)$row->title;
         $np->currentSong = new CurrentSong(
             '',
-            (string)$row->artist,
-            (string)$row->title,
+            $artist ?? '',
+            $title ?? '',
             ' - '
         );
         $np->meta = new Meta(
