@@ -86,7 +86,7 @@ final class SHOUTcast2 extends AdapterAbstract
 
         $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
 
-        $clients = array_map(function($listener) {
+        $clients = array_map(function ($listener) {
             return new Client(
                 $listener['uid'],
                 $listener['xff'] ?: $listener['hostname'],

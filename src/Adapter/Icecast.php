@@ -18,7 +18,8 @@ final class Icecast extends AdapterAbstract
             // If the XML doesn't parse for any reason, fail back to the JSON below.
             try {
                 $np = $this->getXmlNowPlaying($mount);
-            } catch(Exception $e) {}
+            } catch (Exception $e) {
+            }
         }
 
         if (null === $np) {
@@ -62,7 +63,7 @@ final class Icecast extends AdapterAbstract
         }
 
         $npReturn = [];
-        foreach($mounts as $row) {
+        foreach ($mounts as $row) {
             $np = new Result;
             $np->currentSong = new CurrentSong(
                 $row['yp_currently_playing'] ?? '',
@@ -86,7 +87,7 @@ final class Icecast extends AdapterAbstract
         }
 
         $npAggregate = Result::blank();
-        foreach($npReturn as $np) {
+        foreach ($npReturn as $np) {
             $npAggregate->merge($np);
         }
         return $npAggregate;
@@ -107,7 +108,7 @@ final class Icecast extends AdapterAbstract
         $xml = $this->getSimpleXml($payload);
 
         $mountSelector = (null !== $mount)
-            ? '(/icestats/source[@mount=\''.$mount.'\'])[1]'
+            ? '(/icestats/source[@mount=\'' . $mount . '\'])[1]'
             : '(/icestats/source)[1]';
 
         $mount = $xml->xpath($mountSelector);
@@ -161,7 +162,7 @@ final class Icecast extends AdapterAbstract
         $clients = [];
 
         if ((int)$xml->source->listeners > 0) {
-            foreach($xml->source->listener as $listener) {
+            foreach ($xml->source->listener as $listener) {
                 $clients[] = new Client(
                     (string)$listener->ID,
                     (string)$listener->IP,

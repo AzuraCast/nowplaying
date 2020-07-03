@@ -58,7 +58,7 @@ class AdapterFactory
         $adapterClassLookup = [
             self::ADAPTER_ICECAST => Icecast::class,
             self::ADAPTER_SHOUTCAST1 => SHOUTcast1::class,
-            self::ADAPTER_SHOUTCAST2 => SHOUTcast2::class
+            self::ADAPTER_SHOUTCAST2 => SHOUTcast2::class,
         ];
 
         if (!isset($adapterClassLookup[$adapterType])) {

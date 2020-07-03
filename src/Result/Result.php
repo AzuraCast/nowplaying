@@ -9,7 +9,7 @@ final class Result
 
     public Meta $meta;
 
-    /** @var null|Client[]  */
+    /** @var null|Client[] */
     public ?array $clients = null;
 
     public function toArray(): array
@@ -105,7 +105,7 @@ final class Result
         if (isset($np['clients'])) {
             $clients = [];
 
-            foreach($np['clients'] as $row) {
+            foreach ($np['clients'] as $row) {
                 $clients[] = new Client(
                     $row['uid'],
                     $row['ip'],

@@ -3,13 +3,11 @@ namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception;
 use NowPlaying\Result\Client;
-use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Result;
 use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
-use Psr\Http\Message\UriFactoryInterface;
 use Psr\Http\Message\UriInterface;
 
 abstract class AdapterAbstract implements AdapterInterface
@@ -64,14 +62,15 @@ abstract class AdapterAbstract implements AdapterInterface
         if (null !== $this->adminPassword) {
             $request = $request->withHeader(
                 'Authorization',
-                'Basic '. base64_encode('admin:'.$this->adminPassword)
+                'Basic ' . base64_encode('admin:' . $this->adminPassword)
             );
         }
 
         $response = $this->client->sendRequest($request);
 
         if ($response->getStatusCode() !== 200) {
-            throw new Exception(sprintf('Request returned status %d: %s', $response->getStatusCode(), $response->getBody()->getContents()));
+            throw new Exception(sprintf('Request returned status %d: %s', $response->getStatusCode(),
+                $response->getBody()->getContents()));
         }
 
         return $response->getBody()->getContents();
@@ -81,13 +80,14 @@ abstract class AdapterAbstract implements AdapterInterface
      * Given a list of clients, return only ones with unique UserAgent and IP combinations.
      *
      * @param Client[] $clients
+     *
      * @return Client[]
      */
     protected function getUniqueListeners($clients): array
     {
         $uniqueClients = [];
-        foreach($clients as $client) {
-            $clientHash = md5($client->ip.$client->userAgent);
+        foreach ($clients as $client) {
+            $clientHash = md5($client->ip . $client->userAgent);
             if (!isset($uniqueClients[$clientHash])) {
                 $uniqueClients[$clientHash] = $client;
             }
@@ -114,13 +114,13 @@ abstract class AdapterAbstract implements AdapterInterface
 
         if (false === $xml) {
             $xml_errors = [];
-            foreach(libxml_get_errors() as $error) {
+            foreach (libxml_get_errors() as $error) {
                 $xml_errors[] = $error->message;
             }
 
             libxml_clear_errors();
 
-            throw new Exception('XML parsing errors: '.implode(', ', $xml_errors));
+            throw new Exception('XML parsing errors: ' . implode(', ', $xml_errors));
         }
 
         return $xml;
