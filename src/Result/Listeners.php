@@ -9,15 +9,15 @@ final class Listeners
 
     public int $total;
 
-    public function __construct(int $current = 0, int $unique = null, int $total = null)
+    public function __construct(int $current = 0, ?int $unique = null, ?int $total = null)
     {
         $this->current = $current;
         $this->unique = $unique ?? $current;
 
         if (null === $total) {
-            $total = ($unique === 0 || $current === 0)
-                ? max($unique, $current)
-                : min($unique, $current);
+            $total = ($this->unique === 0 || $this->current === 0)
+                ? max($this->unique, $this->current)
+                : min($this->unique, $this->current);
         }
 
         $this->total = $total;
