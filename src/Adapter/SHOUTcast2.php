@@ -53,7 +53,7 @@ final class SHOUTcast2 extends AdapterAbstract
             (string)$xml->CONTENT
         );
 
-        if ($includeClients) {
+        if ($includeClients && !empty($this->adminPassword)) {
             $np->clients = $this->getClients($mount, true);
 
             $np->listeners = new Listeners(

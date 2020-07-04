@@ -26,7 +26,7 @@ final class Icecast extends AdapterAbstract
             $np = $this->getJsonNowPlaying($mount);
         }
 
-        if ($includeClients) {
+        if ($includeClients && !empty($this->adminPassword)) {
             $np->clients = $this->getClients($mount, true);
 
             $np->listeners = new Listeners(
