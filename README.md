@@ -22,50 +22,61 @@ composer require azuracast/nowplaying
 
 ```php
 <?php
-$np = new \NowPlaying\Adapter\SHOUTcast2('http://my-station-url.example.com:8000');
+// Example PSR-17 and PSR-18 implementation from Guzzle 7
+// Install those with:
+//   composer require guzzlehttp/guzzle:^7 http-interop/http-factory-guzzle
 
-// Some functionality depends on an administrator password, but
-// all adapters can pull basic information without it.
-$np->setAdminPassword('aBcDeFg123');
+$adapterFactory = new \NowPlaying\Adapter\AdapterFactory(
+    new \Http\Factory\Guzzle\UriFactory,
+    new \Http\Factory\Guzzle\RequestFactory,
+    new \GuzzleHttp\Client
+);
+
+$adapter = $adapterFactory->getAdapter(
+    \NowPlaying\Adapter\AdapterFactory::ADAPTER_SHOUTCAST2,
+    'http://my-station-url.example.com:8000',
+    'AdminPassword!' // Optional
+);
 
 // The first argument to the functions is the mount point or
 // stream ID (SID), to pull one specific stream's information.
-$now_playing = $np->getNowPlaying('1');
+$now_playing = $adapter->getNowPlaying('1');
 
-$clients = $np->getClients('1');
+$clients = $adapter->getClients('1');
 ```
 
-Example "now playing" response:
+Example "now playing" response (PHP objects represented in JSON):
 
-```
-[
-    'current_song' => [
-        'title' => 'Ticker',
-        'artist' => 'Silent Partner',
-        'text' => 'Silent Partner - Ticker',
-    ],
-    'listeners' => [
-        'current' => 15,
-        'unique' => 8,
-        'total' => 15,
-    ],
-    'meta' => [
-        'status' => 'online',
-        'bitrate' => 128,
-        'format' => 'audio/mpeg',
-    ],
-]
+```json
+{
+    "currentSong": {
+        "text": "Joe Bagale - Until We Meet Again",
+        "title": "Until We Meet Again",
+        "artist": "Joe Bagale"
+    },
+    "listeners": {
+        "current": 0,
+        "unique": 0,
+        "total": 0
+    },
+    "meta": {
+        "online": true,
+        "bitrate": 128,
+        "format": "audio/mpeg"
+    },
+    "clients": []
+}
 ```
 
 Example "clients" response:
 
-```
+```json
 [
-    0 => [
-        'uid' => 1,
-        'ip' => '127.0.0.1',
-        'user_agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36',
-        'connected_seconds' => 123,
-    ],
+    {
+        "uid": 1,
+        "ip": "127.0.0.1",
+        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36","
+        "connectedSeconds": 123
+    }
 ]
 ```

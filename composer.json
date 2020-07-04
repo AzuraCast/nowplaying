@@ -16,7 +16,9 @@
         "phpstan/phpstan-strict-rules": "^0.11.0",
         "roave/security-advisories": "dev-master",
         "overtrue/phplint": "^1.1",
-        "php-http/discovery": "^1.9"
+        "php-http/discovery": "^1.9",
+        "guzzlehttp/guzzle": "^7",
+        "http-interop/http-factory-guzzle": "^1.0"
     },
     "scripts": {
         "test": [
