@@ -15,34 +15,36 @@ final class CurrentSong
         string $artist = '',
         string $delimiter = '-'
     ) {
+        // Fix ShoutCast 2 bug where 3 spaces = " - "
+        $text = str_replace('   ', ' - ', $text);
+
+        $text = $this->cleanUpString($text);
+        $title = $this->cleanUpString($title);
+        $artist = $this->cleanUpString($artist);
+
         if (empty($text) && (!empty($title) || !empty($artist))) {
-            $text = $artist . ' - ' . $title;
-        } elseif (!empty($text) && empty($title) && empty($artist)) {
-            // Fix ShoutCast 2 bug where 3 spaces = " - "
-            $text = str_replace('   ', ' - ', $text);
-
-            // Remove dashes or spaces on both sides of the name.
-            $text = trim($text, " \t\n\r\0\x0B-");
-
+            $textParts = [$artist, $title];
+            $text = implode(' - ', array_filter($textParts));
+        } elseif (!empty($text) && (empty($title) || empty($artist))) {
             $string_parts = explode($delimiter, $text);
 
             // If not normally delimited, return "text" only.
             if (\count($string_parts) === 1) {
                 $title = $text;
             } else {
-                $title = array_pop($string_parts);
-                $artist = implode($delimiter, $string_parts);
+                $title = trim(array_pop($string_parts));
+                $artist = trim(implode($delimiter, $string_parts));
             }
         }
 
-        $this->text = $this->cleanUpString($text);
-        $this->title = $this->cleanUpString($title);
-        $this->artist = $this->cleanUpString($artist);
+        $this->text = $text;
+        $this->title = $title;
+        $this->artist = $artist;
     }
 
     protected function cleanUpString(string $value): string
     {
         $value = htmlspecialchars_decode($value);
-        return trim($value);
+        return trim($value, " \t\n\r\0\x0B-");
     }
 }
