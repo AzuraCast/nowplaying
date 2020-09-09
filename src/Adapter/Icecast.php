@@ -50,7 +50,7 @@ final class Icecast extends AdapterAbstract
             throw new Exception('Remote server returned empty response.');
         }
 
-        $payload = str_replace( '"title": -', '"title": null', $payload);
+        $payload = str_replace( '"title": -', '"title": " - "', $payload);
         $return = @json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
 
         if (!$return || !isset($return['icestats']['source'])) {
