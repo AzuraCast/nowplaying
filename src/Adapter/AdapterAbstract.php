@@ -98,7 +98,13 @@ abstract class AdapterAbstract implements AdapterInterface
             return null;
         }
 
-        return $response->getBody()->getContents();
+        $body = (string)$response->getBody();
+
+        $this->logger->debug('Raw body from response.', [
+            'response' => $body,
+        ]);
+        
+        return $body;
     }
 
     /**
