@@ -7,6 +7,8 @@ use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Psr\Http\Message\UriInterface;
+use Psr\Log\LoggerInterface;
+use Psr\Log\NullLogger;
 
 class AdapterFactory
 {
@@ -20,15 +22,19 @@ class AdapterFactory
 
     protected ClientInterface $client;
 
+    protected LoggerInterface $logger;
+
     /**
      * @param UriFactoryInterface|null $uriFactory
      * @param RequestFactoryInterface|null $requestFactory
      * @param ClientInterface|null $client
+     * @param LoggerInterface|null $logger
      */
     public function __construct(
         ?UriFactoryInterface $uriFactory = null,
         ?RequestFactoryInterface $requestFactory = null,
-        ?ClientInterface $client = null
+        ?ClientInterface $client = null,
+        ?LoggerInterface $logger = null
     ) {
         if ((null === $uriFactory || null === $requestFactory || null === $client) && !class_exists(Psr17FactoryDiscovery::class)) {
             throw new \InvalidArgumentException('No auto-discovery mechanism available for PSR factories.');
@@ -37,6 +43,7 @@ class AdapterFactory
         $this->uriFactory = $uriFactory ?? Psr17FactoryDiscovery::findUrlFactory();
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
         $this->client = $client ?? Psr18ClientDiscovery::find();
+        $this->logger = $logger ?? new NullLogger;
     }
 
     /**
@@ -71,6 +78,7 @@ class AdapterFactory
         return new $adapterClass(
             $this->requestFactory,
             $this->client,
+            $this->logger,
             $baseUri,
             $adminPassword
         );

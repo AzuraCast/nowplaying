@@ -1,14 +1,14 @@
 <?php
 namespace NowPlaying\Adapter;
 
-use NowPlaying\Exception;
 use NowPlaying\Result\Client;
 use NowPlaying\Result\Result;
-use Psr\Http\Client\ClientExceptionInterface;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\UriInterface;
+use Psr\Log\LoggerInterface;
+use SimpleXMLElement;
 
 abstract class AdapterAbstract implements AdapterInterface
 {
@@ -18,17 +18,26 @@ abstract class AdapterAbstract implements AdapterInterface
 
     protected ClientInterface $client;
 
+    protected LoggerInterface $logger;
+
+    protected string $adminUsername;
+
     protected ?string $adminPassword = null;
 
     public function __construct(
         RequestFactoryInterface $requestFactory,
         ClientInterface $client,
+        LoggerInterface $logger,
         UriInterface $baseUri,
+        ?string $adminUsername,
         ?string $adminPassword
     ) {
-        $this->baseUri = $baseUri;
         $this->requestFactory = $requestFactory;
         $this->client = $client;
+        $this->logger = $logger;
+        $this->baseUri = $baseUri;
+
+        $this->adminUsername = $adminUsername ?? 'admin';
         $this->adminPassword = $adminPassword;
     }
 
@@ -47,10 +56,9 @@ abstract class AdapterAbstract implements AdapterInterface
      *
      * @param RequestInterface $request
      *
-     * @return string
-     * @throws Exception|ClientExceptionInterface
+     * @return string|null
      */
-    protected function getUrl(RequestInterface $request): string
+    protected function getUrl(RequestInterface $request): ?string
     {
         if (!$request->hasHeader('User-Agent')) {
             $request = $request->withHeader(
@@ -62,15 +70,23 @@ abstract class AdapterAbstract implements AdapterInterface
         if (null !== $this->adminPassword) {
             $request = $request->withHeader(
                 'Authorization',
-                'Basic ' . base64_encode('admin:' . $this->adminPassword)
+                'Basic ' . base64_encode($this->adminUsername . ':' . $this->adminPassword)
             );
         }
+
+        $this->logger->debug(sprintf(
+            'Sending %s request to %s',
+            strtoupper($request->getMethod()),
+            (string)$request->getUri()
+        ));
 
         $response = $this->client->sendRequest($request);
 
         if ($response->getStatusCode() !== 200) {
-            throw new Exception(sprintf('Request returned status %d: %s', $response->getStatusCode(),
-                $response->getBody()->getContents()));
+            $this->logger->error(sprintf('Request returned status code %d.', $response->getStatusCode()), [
+                'body' => (string)$request->getBody(),
+            ]);
+            return null;
         }
 
         return $response->getBody()->getContents();
@@ -101,10 +117,9 @@ abstract class AdapterAbstract implements AdapterInterface
      *
      * @param string $xmlString
      *
-     * @return \SimpleXMLElement
-     * @throws Exception
+     * @return SimpleXMLElement|null
      */
-    protected function getSimpleXml(string $xmlString): \SimpleXMLElement
+    protected function getSimpleXml(string $xmlString): ?SimpleXMLElement
     {
         $xmlString = html_entity_decode($xmlString);
         $xmlString = preg_replace('/&(?!#?[a-z0-9]+;)/', '&amp;', $xmlString);
@@ -120,7 +135,11 @@ abstract class AdapterAbstract implements AdapterInterface
 
             libxml_clear_errors();
 
-            throw new Exception('XML parsing errors: ' . implode(', ', $xml_errors));
+            $this->logger->error('Error parsing XML response.', [
+                'response' => $xmlString,
+                'errors' => $xml_errors,
+            ]);
+            return null;
         }
 
         return $xml;

@@ -1,7 +1,6 @@
 <?php
 namespace NowPlaying\Adapter;
 
-use NowPlaying\Exception;
 use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Meta;
@@ -15,10 +14,10 @@ final class SHOUTcast1 extends AdapterAbstract
             'GET',
             $this->baseUri->withPath('/7.html')
         );
-        $returnRaw = $this->getUrl($request);
 
+        $returnRaw = $this->getUrl($request);
         if (empty($returnRaw)) {
-            throw new Exception('Remote server returned empty response.');
+            return Result::blank();
         }
 
         preg_match("/<body.*>(.*)<\/body>/smU", $returnRaw, $return);
@@ -38,6 +37,7 @@ final class SHOUTcast1 extends AdapterAbstract
 
     public function getClients(?string $mount = null, bool $uniqueOnly = true): array
     {
-        throw new Exception('This feature is not implemented for this adapter.');
+        $this->logger->critical('This feature is not implemented for this adapter.');
+        return [];
     }
 }

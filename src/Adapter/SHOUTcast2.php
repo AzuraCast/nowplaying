@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Adapter;
 
-use NowPlaying\Exception;
+use JsonException;
 use NowPlaying\Result\Client;
 use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
@@ -17,7 +17,7 @@ final class SHOUTcast2 extends AdapterAbstract
             $query['sid'] = $mount;
         }
 
-        if (!empty($this->admin_password)) {
+        if (!empty($this->adminPassword)) {
             $query['mode'] = 'viewxml';
             $query['page'] = '7';
 
@@ -36,10 +36,13 @@ final class SHOUTcast2 extends AdapterAbstract
 
         $payload = $this->getUrl($request);
         if (empty($payload)) {
-            throw new Exception('Remote server returned empty response.');
+            return Result::blank();
         }
 
         $xml = $this->getSimpleXml($payload);
+        if (null === $xml) {
+            return Result::blank();
+        }
 
         $np = new Result;
         $np->currentSong = new CurrentSong((string)$xml->SONGTITLE);
@@ -81,10 +84,17 @@ final class SHOUTcast2 extends AdapterAbstract
 
         $return_raw = $this->getUrl($request);
         if (empty($return_raw)) {
-            throw new Exception('Remote server returned empty response.');
+            return [];
         }
 
-        $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
+        try {
+            $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            $this->logger->error(sprintf('JSON parsing error: %s', $e->getMessage()), [
+                'response' => $return_raw,
+            ]);
+            return [];
+        }
 
         $clients = array_map(function ($listener) {
             return new Client(

@@ -1,7 +1,7 @@
 <?php
 namespace NowPlaying\Adapter;
 
-use NowPlaying\Exception;
+use JsonException;
 use NowPlaying\Result\Client;
 use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
@@ -14,16 +14,21 @@ final class Icecast extends AdapterAbstract
     {
         $np = null;
 
-        if (!empty($this->admin_password)) {
+        if (!empty($this->adminPassword)) {
             // If the XML doesn't parse for any reason, fail back to the JSON below.
-            try {
-                $np = $this->getXmlNowPlaying($mount);
-            } catch (Exception $e) {
+            $np = $this->getXmlNowPlaying($mount);
+
+            if (null === $np) {
+                $this->logger->warning('Could not fetch XML data; falling back to public JSON.');
             }
         }
 
         if (null === $np) {
             $np = $this->getJsonNowPlaying($mount);
+        }
+
+        if (null === $np) {
+            return Result::blank();
         }
 
         if ($includeClients && !empty($this->adminPassword)) {
@@ -38,7 +43,7 @@ final class Icecast extends AdapterAbstract
         return $np;
     }
 
-    protected function getJsonNowPlaying(?string $mount = null): Result
+    protected function getJsonNowPlaying(?string $mount = null): ?Result
     {
         $request = $this->requestFactory->createRequest(
             'GET',
@@ -47,20 +52,35 @@ final class Icecast extends AdapterAbstract
 
         $payload = $this->getUrl($request);
         if (!$payload) {
-            throw new Exception('Remote server returned empty response.');
+            return null;
         }
 
-        $payload = str_replace( '"title": -', '"title": " - "', $payload);
-        $return = @json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        $payload = str_replace('"title": -', '"title": " - "', $payload);
+
+        try {
+            $return = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            $this->logger->error(sprintf('JSON parsing error: %s', $e->getMessage()), [
+                'response' => $payload,
+            ]);
+            return null;
+        }
 
         if (!$return || !isset($return['icestats']['source'])) {
-            throw new Exception(sprintf('Invalid response: %s', $payload));
+            $this->logger->error('Response does not contain a "source" listing; the stream may be hidden or misspelled.',
+                [
+                    'response' => $payload,
+                ]);
+            return null;
         }
 
         $sources = $return['icestats']['source'];
         $mounts = key($sources) === 0 ? $sources : [$sources];
         if (count($mounts) === 0) {
-            throw new Exception('Remote server has no mount points.');
+            $this->logger->error('Remote server has no mount points listed.', [
+                'response' => $payload,
+            ]);
+            return null;
         }
 
         $npReturn = [];
@@ -94,7 +114,7 @@ final class Icecast extends AdapterAbstract
         return $npAggregate;
     }
 
-    protected function getXmlNowPlaying(?string $mount = null): Result
+    protected function getXmlNowPlaying(?string $mount = null): ?Result
     {
         $request = $this->requestFactory->createRequest(
             'GET',
@@ -103,26 +123,29 @@ final class Icecast extends AdapterAbstract
 
         $payload = $this->getUrl($request);
         if (!$payload) {
-            throw new Exception('Remote server returned empty response.');
+            return null;
         }
 
         $xml = $this->getSimpleXml($payload);
+        if (null === $xml) {
+            return null;
+        }
 
         $mountSelector = (null !== $mount)
             ? '(/icestats/source[@mount=\'' . $mount . '\'])[1]'
             : '(/icestats/source)[1]';
 
         $mount = $xml->xpath($mountSelector);
-
         if (empty($mount)) {
-            return Result::blank();
+            $this->logger->error('Remote server has no mount points listed.', [
+                'response' => $payload,
+            ]);
+            return null;
         }
 
         $row = $mount[0];
 
         $np = new Result;
-
-
         $artist = (string)$row->artist;
         $title = (string)$row->title;
         $np->currentSong = new CurrentSong(
@@ -146,7 +169,8 @@ final class Icecast extends AdapterAbstract
     public function getClients(?string $mount = null, bool $uniqueOnly = true): array
     {
         if (empty($mount)) {
-            throw new Exception('This adapter requires a mount point name.');
+            $this->logger->error('This adapter requires a mount point name.');
+            return [];
         }
 
         $request = $this->requestFactory->createRequest(
@@ -159,10 +183,13 @@ final class Icecast extends AdapterAbstract
 
         $returnRaw = $this->getUrl($request);
         if (empty($returnRaw)) {
-            throw new Exception('Remote server returned an empty response.');
+            return [];
         }
 
         $xml = $this->getSimpleXml($returnRaw);
+        if (null === $xml) {
+            return [];
+        }
 
         $clients = [];
 
