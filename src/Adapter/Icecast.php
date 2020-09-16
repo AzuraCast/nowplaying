@@ -150,8 +150,8 @@ final class Icecast extends AdapterAbstract
         $title = (string)$row->title;
         $np->currentSong = new CurrentSong(
             '',
-            $artist ?? '',
             $title ?? '',
+            $artist ?? '',
             ' - '
         );
         $np->meta = new Meta(
