@@ -1,6 +1,8 @@
 <?php
 namespace NowPlaying\Result;
 
+use JsonException;
+
 final class Result
 {
     public CurrentSong $currentSong;
@@ -16,7 +18,7 @@ final class Result
     {
         try {
             return json_decode(json_encode($this, JSON_THROW_ON_ERROR), true, 512, JSON_THROW_ON_ERROR);
-        } catch (\JsonException $e) {
+        } catch (JsonException $e) {
             return [];
         }
     }

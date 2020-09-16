@@ -91,6 +91,7 @@ final class SHOUTcast2 extends AdapterAbstract
             $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
             $this->logger->error(sprintf('JSON parsing error: %s', $e->getMessage()), [
+                'exception' => $e,
                 'response' => $return_raw,
             ]);
             return [];

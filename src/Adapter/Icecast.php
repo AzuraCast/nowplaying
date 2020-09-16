@@ -61,6 +61,7 @@ final class Icecast extends AdapterAbstract
             $return = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
             $this->logger->error(sprintf('JSON parsing error: %s', $e->getMessage()), [
+                'exception' => $e,
                 'response' => $payload,
             ]);
             return null;
