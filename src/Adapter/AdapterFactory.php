@@ -49,16 +49,12 @@ class AdapterFactory
     /**
      * @param string $adapterType
      * @param string|UriInterface $baseUri
-     * @param string|null $adminUsername
-     * @param string|null $adminPassword
      *
      * @return AdapterAbstract
      */
     public function getAdapter(
         string $adapterType,
-        $baseUri,
-        ?string $adminUsername,
-        ?string $adminPassword
+        $baseUri
     ): AdapterAbstract {
         if (!($baseUri instanceof UriInterface)) {
             $baseUri = $this->uriFactory->createUri($baseUri);
@@ -81,9 +77,7 @@ class AdapterFactory
             $this->requestFactory,
             $this->client,
             $this->logger,
-            $baseUri,
-            $adminUsername,
-            $adminPassword
+            $baseUri
         );
     }
 }

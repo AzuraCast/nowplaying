@@ -20,7 +20,7 @@ abstract class AdapterAbstract implements AdapterInterface
 
     protected LoggerInterface $logger;
 
-    protected string $adminUsername;
+    protected string $adminUsername = 'admin';
 
     protected ?string $adminPassword = null;
 
@@ -28,17 +28,26 @@ abstract class AdapterAbstract implements AdapterInterface
         RequestFactoryInterface $requestFactory,
         ClientInterface $client,
         LoggerInterface $logger,
-        UriInterface $baseUri,
-        ?string $adminUsername,
-        ?string $adminPassword
+        UriInterface $baseUri
     ) {
         $this->requestFactory = $requestFactory;
         $this->client = $client;
         $this->logger = $logger;
         $this->baseUri = $baseUri;
+    }
 
-        $this->adminUsername = $adminUsername ?? 'admin';
+    public function setAdminUsername(string $adminUsername): self
+    {
+        $this->adminUsername = $adminUsername;
+
+        return $this;
+    }
+
+    public function setAdminPassword(?string $adminPassword): self
+    {
         $this->adminPassword = $adminPassword;
+
+        return $this;
     }
 
     /**
