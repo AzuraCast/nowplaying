@@ -15,9 +15,6 @@ final class CurrentSong
         string $artist = '',
         string $delimiter = '-'
     ) {
-        // Fix ShoutCast 2 bug where 3 spaces = " - "
-        $text = str_replace('   ', ' - ', $text);
-
         $text = $this->cleanUpString($text);
         $title = $this->cleanUpString($title);
         $artist = $this->cleanUpString($artist);
@@ -25,7 +22,9 @@ final class CurrentSong
         if (empty($text) && (!empty($title) || !empty($artist))) {
             $textParts = [$artist, $title];
             $text = implode(' - ', array_filter($textParts));
-        } elseif (!empty($text) && (empty($title) || empty($artist))) {
+        }
+
+        if (!empty($text) && (empty($title) || empty($artist))) {
             $string_parts = explode($delimiter, $text);
 
             // If not normally delimited, return "text" only.

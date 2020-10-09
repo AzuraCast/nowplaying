@@ -44,8 +44,12 @@ final class SHOUTcast2 extends AdapterAbstract
             return Result::blank();
         }
 
+        // Fix ShoutCast 2 bug where 3 spaces = " - "
+        $currentSongText = (string)$xml->SONGTITLE;
+        $currentSongText = str_replace('   ', ' - ', $currentSongText);
+
         $np = new Result;
-        $np->currentSong = new CurrentSong((string)$xml->SONGTITLE);
+        $np->currentSong = new CurrentSong($currentSongText);
         $np->listeners = new Listeners(
             (int)$xml->CURRENTLISTENERS,
             (int)$xml->UNIQUELISTENERS
