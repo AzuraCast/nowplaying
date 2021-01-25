@@ -1,4 +1,5 @@
 <?php
+
 namespace NowPlaying\Result;
 
 final class Listeners
@@ -9,8 +10,11 @@ final class Listeners
 
     public int $total;
 
-    public function __construct(int $current = 0, ?int $unique = null, ?int $total = null)
-    {
+    public function __construct(
+        int $current = 0,
+        ?int $unique = null,
+        ?int $total = null
+    ) {
         $this->current = $current;
         $this->unique = $unique ?? $current;
 

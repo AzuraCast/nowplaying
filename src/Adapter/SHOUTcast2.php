@@ -1,4 +1,5 @@
 <?php
+
 namespace NowPlaying\Adapter;
 
 use JsonException;
@@ -94,21 +95,28 @@ final class SHOUTcast2 extends AdapterAbstract
         try {
             $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            $this->logger->error(sprintf('JSON parsing error: %s', $e->getMessage()), [
-                'exception' => $e,
-                'response' => $return_raw,
-            ]);
+            $this->logger->error(
+                sprintf('JSON parsing error: %s', $e->getMessage()),
+                [
+                    'exception' => $e,
+                    'response' => $return_raw,
+                ]
+            );
             return [];
         }
 
-        $clients = array_map(function ($listener) {
-            return new Client(
-                $listener['uid'],
-                $listener['xff'] ?: $listener['hostname'],
-                $listener['useragent'],
-                $listener['connecttime']
-            );
-        }, (array)$listeners);
+        $clients = array_map(
+            function ($listener) use ($mount) {
+                return new Client(
+                    $listener['uid'],
+                    $listener['xff'] ?: $listener['hostname'],
+                    $listener['useragent'],
+                    $listener['connecttime'],
+                    $mount
+                );
+            },
+            (array)$listeners
+        );
 
         return $uniqueOnly
             ? $this->getUniqueListeners($clients)

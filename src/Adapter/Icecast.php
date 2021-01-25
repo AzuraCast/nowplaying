@@ -1,4 +1,5 @@
 <?php
+
 namespace NowPlaying\Adapter;
 
 use JsonException;
@@ -60,27 +61,35 @@ final class Icecast extends AdapterAbstract
         try {
             $return = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            $this->logger->error(sprintf('JSON parsing error: %s', $e->getMessage()), [
-                'exception' => $e,
-                'response' => $payload,
-            ]);
+            $this->logger->error(
+                sprintf('JSON parsing error: %s', $e->getMessage()),
+                [
+                    'exception' => $e,
+                    'response' => $payload,
+                ]
+            );
             return null;
         }
 
         if (!$return || !isset($return['icestats']['source'])) {
-            $this->logger->error('Response does not contain a "source" listing; the stream may be hidden or misspelled.',
+            $this->logger->error(
+                'Response does not contain a "source" listing; the stream may be hidden or misspelled.',
                 [
                     'response' => $payload,
-                ]);
+                ]
+            );
             return null;
         }
 
         $sources = $return['icestats']['source'];
         $mounts = key($sources) === 0 ? $sources : [$sources];
         if (count($mounts) === 0) {
-            $this->logger->error('Remote server has no mount points listed.', [
-                'response' => $payload,
-            ]);
+            $this->logger->error(
+                'Remote server has no mount points listed.',
+                [
+                    'response' => $payload,
+                ]
+            );
             return null;
         }
 
@@ -138,9 +147,12 @@ final class Icecast extends AdapterAbstract
 
         $mount = $xml->xpath($mountSelector);
         if (empty($mount)) {
-            $this->logger->error('Remote server has no mount points listed.', [
-                'response' => $payload,
-            ]);
+            $this->logger->error(
+                'Remote server has no mount points listed.',
+                [
+                    'response' => $payload,
+                ]
+            );
             return null;
         }
 
@@ -177,9 +189,13 @@ final class Icecast extends AdapterAbstract
         $request = $this->requestFactory->createRequest(
             'GET',
             $this->baseUri->withPath('/admin/listclients')
-                ->withQuery(http_build_query([
-                    'mount' => $mount,
-                ]))
+                ->withQuery(
+                    http_build_query(
+                        [
+                            'mount' => $mount,
+                        ]
+                    )
+                )
         );
 
         $returnRaw = $this->getUrl($request);
@@ -200,7 +216,8 @@ final class Icecast extends AdapterAbstract
                     (string)$listener->ID,
                     (string)$listener->IP,
                     (string)$listener->UserAgent,
-                    (int)$listener->Connected
+                    (int)$listener->Connected,
+                    $mount
                 );
             }
         }
