@@ -119,7 +119,7 @@ final class Icecast extends AdapterAbstract
 
         $npAggregate = Result::blank();
         foreach ($npReturn as $np) {
-            $npAggregate->merge($np);
+            $npAggregate = $npAggregate->merge($np);
         }
         return $npAggregate;
     }
