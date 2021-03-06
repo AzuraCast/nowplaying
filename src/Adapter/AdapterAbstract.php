@@ -30,6 +30,17 @@ abstract class AdapterAbstract implements AdapterInterface
         LoggerInterface $logger,
         UriInterface $baseUri
     ) {
+        // Detect a username/password in the base URI itself.
+        $uriUserInfo = $baseUri->getUserInfo();
+        if ('' !== $uriUserInfo) {
+            [$uriUsername,$uriPassword] = explode(':', $uriUserInfo);
+
+            $this->setAdminUsername($uriUsername);
+            $this->setAdminPassword($uriPassword);
+
+            $baseUri = $baseUri->withUserInfo('');
+        }
+
         $this->requestFactory = $requestFactory;
         $this->client = $client;
         $this->logger = $logger;
