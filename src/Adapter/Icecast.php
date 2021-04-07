@@ -102,9 +102,13 @@ final class Icecast extends AdapterAbstract
                 $row['artist'] ?? '',
                 ' - '
             );
+
+            $bitrate = $row['audio_bitrate'] ?? $row['bitrate'] ?? null;
+            $bitrate = (null === $bitrate) ? null : (int)$bitrate;
+
             $np->meta = new Meta(
                 !empty($np->currentSong->text),
-                $row['bitrate'],
+                $bitrate,
                 $row['server_type']
             );
             $np->listeners = new Listeners($row['listeners']);
@@ -167,9 +171,16 @@ final class Icecast extends AdapterAbstract
             $artist ?? '',
             ' - '
         );
+
+        $bitrate = max(
+            (int)$row->audio_bitrate,
+            (int)$row->bitrate
+        );
+        $bitrate = (0 === $bitrate) ? null : $bitrate;
+
         $np->meta = new Meta(
             !empty($np->currentSong->text),
-            (int)$row->bitrate,
+            $bitrate,
             (string)$row->server_type
         );
         $np->listeners = new Listeners(
