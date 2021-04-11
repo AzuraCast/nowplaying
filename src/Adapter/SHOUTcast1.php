@@ -1,6 +1,8 @@
 <?php
+
 namespace NowPlaying\Adapter;
 
+use NowPlaying\Exception\UnsupportedException;
 use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Meta;
@@ -37,7 +39,6 @@ final class SHOUTcast1 extends AdapterAbstract
 
     public function getClients(?string $mount = null, bool $uniqueOnly = true): array
     {
-        $this->logger->critical('This feature is not implemented for this adapter.');
-        return [];
+        throw new UnsupportedException;
     }
 }

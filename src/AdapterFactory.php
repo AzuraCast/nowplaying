@@ -1,8 +1,13 @@
 <?php
-namespace NowPlaying\Adapter;
+
+namespace NowPlaying;
 
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
+use NowPlaying\Adapter\AdapterAbstract;
+use NowPlaying\Adapter\Icecast;
+use NowPlaying\Adapter\SHOUTcast1;
+use NowPlaying\Adapter\SHOUTcast2;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
@@ -36,7 +41,8 @@ class AdapterFactory
         ?ClientInterface $client = null,
         ?LoggerInterface $logger = null
     ) {
-        if ((null === $uriFactory || null === $requestFactory || null === $client) && !class_exists(Psr17FactoryDiscovery::class)) {
+        if ((null === $uriFactory || null === $requestFactory || null === $client)
+            && !class_exists(Psr17FactoryDiscovery::class)) {
             throw new \InvalidArgumentException('No auto-discovery mechanism available for PSR factories.');
         }
 
@@ -79,5 +85,35 @@ class AdapterFactory
             $this->logger,
             $baseUri
         );
+    }
+
+    /**
+     * @param string|UriInterface $baseUri
+     *
+     * @return AdapterAbstract
+     */
+    public function getIcecastAdapter($baseUri): AdapterAbstract
+    {
+        return $this->getAdapter(self::ADAPTER_ICECAST, $baseUri);
+    }
+
+    /**
+     * @param string|UriInterface $baseUri
+     *
+     * @return AdapterAbstract
+     */
+    public function getShoutcast1Adapter($baseUri): AdapterAbstract
+    {
+        return $this->getAdapter(self::ADAPTER_SHOUTCAST1, $baseUri);
+    }
+
+    /**
+     * @param string|UriInterface $baseUri
+     *
+     * @return AdapterAbstract
+     */
+    public function getShoutcast2Adapter($baseUri): AdapterAbstract
+    {
+        return $this->getAdapter(self::ADAPTER_SHOUTCAST2, $baseUri);
     }
 }

@@ -1,6 +1,7 @@
 # NowPlaying
 
-NowPlaying is a lightweight, modern, object-oriented PHP library that abstracts out the currently playing metadata from popular radio broadcast software into a single common return format.
+NowPlaying is a lightweight, modern, object-oriented PHP library that abstracts out the currently playing metadata from
+popular radio broadcast software into a single common return format.
 
 ### Installing
 
@@ -26,17 +27,23 @@ composer require azuracast/nowplaying
 // Install those with:
 //   composer require guzzlehttp/guzzle:^7 http-interop/http-factory-guzzle
 
-$adapterFactory = new \NowPlaying\Adapter\AdapterFactory(
-    new \Http\Factory\Guzzle\UriFactory,
-    new \Http\Factory\Guzzle\RequestFactory,
-    new \GuzzleHttp\Client
+$adapterFactory = new NowPlaying\AdapterFactory(
+    new Http\Factory\Guzzle\UriFactory,
+    new Http\Factory\Guzzle\RequestFactory,
+    new GuzzleHttp\Client
 );
 
 $adapter = $adapterFactory->getAdapter(
-    \NowPlaying\Adapter\AdapterFactory::ADAPTER_SHOUTCAST2,
-    'http://my-station-url.example.com:8000',
-    'AdminPassword!' // Optional
+    NowPlaying\AdapterFactory::ADAPTER_SHOUTCAST2,
+    'http://my-station-url.example.com:8000'
 );
+
+// You can also call:
+// $adapterFactory->getShoutcast2Adapter('http://url');
+
+// Optionally set administrator password
+$adapter->setAdminUsername('admin'); // "admin" is the default
+$adapter->setAdminPassword('AdminPassword!');
 
 // The first argument to the functions is the mount point or
 // stream ID (SID), to pull one specific stream's information.
@@ -49,22 +56,22 @@ Example "now playing" response (PHP objects represented in JSON):
 
 ```json
 {
-    "currentSong": {
-        "text": "Joe Bagale - Until We Meet Again",
-        "title": "Until We Meet Again",
-        "artist": "Joe Bagale"
-    },
-    "listeners": {
-        "current": 0,
-        "unique": 0,
-        "total": 0
-    },
-    "meta": {
-        "online": true,
-        "bitrate": 128,
-        "format": "audio/mpeg"
-    },
-    "clients": []
+  "currentSong": {
+    "text": "Joe Bagale - Until We Meet Again",
+    "title": "Until We Meet Again",
+    "artist": "Joe Bagale"
+  },
+  "listeners": {
+    "current": 0,
+    "unique": 0,
+    "total": 0
+  },
+  "meta": {
+    "online": true,
+    "bitrate": 128,
+    "format": "audio/mpeg"
+  },
+  "clients": []
 }
 ```
 
@@ -72,11 +79,11 @@ Example "clients" response:
 
 ```json
 [
-    {
-        "uid": 1,
-        "ip": "127.0.0.1",
-        "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36",
-        "connectedSeconds": 123
-    }
+  {
+    "uid": 1,
+    "ip": "127.0.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.81 Safari/537.36",
+    "connectedSeconds": 123
+  }
 ]
 ```
