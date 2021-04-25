@@ -1,4 +1,5 @@
 <?php
+
 namespace NowPlaying\Result;
 
 use JsonException;
@@ -34,7 +35,12 @@ final class Result
 
         // Sum listeners
         $currentListeners = $dest->listeners->current + $source->listeners->current;
-        $uniqueListeners = $dest->listeners->unique + $source->listeners->unique;
+        if (null === $source->listeners->unique) {
+            $uniqueListeners = $dest->listeners->unique ?? null;
+        } else {
+            $uniqueListeners = $source->listeners->unique + ($dest->listeners->unique ?? 0);
+        }
+        
         $dest->listeners = new Listeners($currentListeners, $uniqueListeners);
 
         // Update metadata
@@ -89,8 +95,7 @@ final class Result
         $listeners = $np['listeners'];
         $result->listeners = new Listeners(
             $listeners['current'] ?? 0,
-            $listeners['unique'] ?? null,
-            $listeners['total'] ?? null
+            $listeners['unique'] ?? null
         );
 
         $meta = $np['meta'];
