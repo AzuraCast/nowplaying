@@ -1,12 +1,19 @@
 name: Test Suite
 
-on: [push, pull_request]
+on: [ push, pull_request ]
 
 jobs:
   test_suite:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    
-    - name: Run test suite
-      uses: docker://azuracast/azuracast_testing:latest
+      - uses: actions/checkout@v1
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.0'
+          tools: composer:v2
+
+      - name: Run test suite
+        run: |
+          composer run test
