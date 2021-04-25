@@ -34,14 +34,15 @@ final class Result
         }
 
         // Sum listeners
-        $currentListeners = $dest->listeners->current + $source->listeners->current;
+        $totalListeners = $dest->listeners->total + $source->listeners->total;
+
         if (null === $source->listeners->unique) {
             $uniqueListeners = $dest->listeners->unique ?? null;
         } else {
             $uniqueListeners = $source->listeners->unique + ($dest->listeners->unique ?? 0);
         }
-        
-        $dest->listeners = new Listeners($currentListeners, $uniqueListeners);
+
+        $dest->listeners = new Listeners($totalListeners, $uniqueListeners);
 
         // Update metadata
         if (!$dest->meta->online && $source->meta->online) {
@@ -94,7 +95,7 @@ final class Result
 
         $listeners = $np['listeners'];
         $result->listeners = new Listeners(
-            $listeners['current'] ?? 0,
+            $listeners['total'] ?? $listeners['current'] ?? 0,
             $listeners['unique'] ?? null
         );
 

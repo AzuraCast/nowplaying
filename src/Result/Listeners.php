@@ -4,15 +4,15 @@ namespace NowPlaying\Result;
 
 final class Listeners
 {
-    public int $current;
+    public int $total;
 
     public ?int $unique;
 
     public function __construct(
-        int $current = 0,
+        int $total = 0,
         ?int $unique = null
     ) {
-        $this->current = $current;
+        $this->total = $total;
         $this->unique = $unique;
     }
 }
