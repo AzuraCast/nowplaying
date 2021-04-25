@@ -36,7 +36,7 @@ final class Icecast extends AdapterAbstract
             $np->clients = $this->getClients($mount, true);
 
             $np->listeners = new Listeners(
-                $np->listeners->current,
+                $np->listeners->total,
                 count($np->clients)
             );
         }

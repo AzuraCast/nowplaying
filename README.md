@@ -62,9 +62,8 @@ Example "now playing" response (PHP objects represented in JSON):
     "artist": "Joe Bagale"
   },
   "listeners": {
-    "current": 0,
-    "unique": 0,
-    "total": 0
+    "total": 0,
+    "unique": 0
   },
   "meta": {
     "online": true,

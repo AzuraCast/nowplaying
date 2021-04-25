@@ -23,12 +23,12 @@ final class SHOUTcast1 extends AdapterAbstract
         }
 
         preg_match("/<body.*>(.*)<\/body>/smU", $returnRaw, $return);
-        [$current_listeners, , , , $unique_listeners, $bitrate, $title] = explode(',', $return[1], 7);
+        [$total_listeners, , , , $unique_listeners, $bitrate, $title] = explode(',', $return[1], 7);
 
         // Increment listener counts in the now playing data.
         $np = new Result;
         $np->currentSong = new CurrentSong($title);
-        $np->listeners = new Listeners((int)$current_listeners, (int)$unique_listeners);
+        $np->listeners = new Listeners((int)$total_listeners, (int)$unique_listeners);
         $np->meta = new Meta(
             !empty($np->currentSong->text),
             $bitrate
