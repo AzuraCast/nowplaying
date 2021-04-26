@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Result\Client;

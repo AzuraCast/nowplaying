@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NowPlaying\Result;
 
 use JsonException;
@@ -15,6 +17,9 @@ final class Result
     /** @var null|Client[] */
     public ?array $clients = null;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         try {
@@ -81,6 +86,12 @@ final class Result
 
         return $return;
     }
+
+    /**
+     * @param array<string,mixed> $np
+     *
+     * @return static
+     */
 
     public static function fromArray(array $np): self
     {

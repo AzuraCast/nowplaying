@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Exception\UnsupportedException;
@@ -31,7 +33,7 @@ final class SHOUTcast1 extends AdapterAbstract
         $np->listeners = new Listeners((int)$total_listeners, (int)$unique_listeners);
         $np->meta = new Meta(
             !empty($np->currentSong->text),
-            $bitrate
+            (int)$bitrate
         );
 
         return $np;

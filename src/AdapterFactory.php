@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace NowPlaying;
 
 use Http\Discovery\Psr17FactoryDiscovery;

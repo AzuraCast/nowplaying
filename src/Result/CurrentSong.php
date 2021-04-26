@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace NowPlaying\Result;
 
 final class CurrentSong
@@ -25,13 +28,13 @@ final class CurrentSong
         }
 
         if (!empty($text) && (empty($title) || empty($artist))) {
-            $string_parts = explode($delimiter, $text);
+            $string_parts = explode($delimiter, $text) ?: [$text];
 
             // If not normally delimited, return "text" only.
             if (\count($string_parts) === 1) {
                 $title = $text;
             } else {
-                $title = trim(array_pop($string_parts));
+                $title = trim(array_pop($string_parts) ?? '');
                 $artist = trim(implode($delimiter, $string_parts));
             }
         }

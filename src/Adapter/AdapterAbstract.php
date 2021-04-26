@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 namespace NowPlaying\Adapter;
 
 use NowPlaying\Result\Client;
@@ -33,7 +36,7 @@ abstract class AdapterAbstract implements AdapterInterface
         // Detect a username/password in the base URI itself.
         $uriUserInfo = $baseUri->getUserInfo();
         if ('' !== $uriUserInfo) {
-            [$uriUsername,$uriPassword] = explode(':', $uriUserInfo);
+            [$uriUsername, $uriPassword] = explode(':', $uriUserInfo);
 
             $this->setAdminUsername($uriUsername);
             $this->setAdminPassword($uriPassword);
@@ -94,27 +97,35 @@ abstract class AdapterAbstract implements AdapterInterface
             );
         }
 
-        $this->logger->debug(sprintf(
-            'Sending %s request to %s',
-            strtoupper($request->getMethod()),
-            (string)$request->getUri()
-        ));
+        $this->logger->debug(
+            sprintf(
+                'Sending %s request to %s',
+                strtoupper($request->getMethod()),
+                (string)$request->getUri()
+            )
+        );
 
         $response = $this->client->sendRequest($request);
 
         if ($response->getStatusCode() !== 200) {
-            $this->logger->error(sprintf('Request returned status code %d.', $response->getStatusCode()), [
-                'body' => (string)$request->getBody(),
-            ]);
+            $this->logger->error(
+                sprintf('Request returned status code %d.', $response->getStatusCode()),
+                [
+                    'body' => (string)$request->getBody(),
+                ]
+            );
             return null;
         }
 
         $body = (string)$response->getBody();
 
-        $this->logger->debug('Raw body from response.', [
-            'response' => $body,
-        ]);
-        
+        $this->logger->debug(
+            'Raw body from response.',
+            [
+                'response' => $body,
+            ]
+        );
+
         return $body;
     }
 
@@ -148,7 +159,7 @@ abstract class AdapterAbstract implements AdapterInterface
     protected function getSimpleXml(string $xmlString): ?SimpleXMLElement
     {
         $xmlString = html_entity_decode($xmlString);
-        $xmlString = preg_replace('/&(?!#?[a-z0-9]+;)/', '&amp;', $xmlString);
+        $xmlString = preg_replace('/&(?!#?[a-z0-9]+;)/', '&amp;', $xmlString) ?? '';
 
         libxml_use_internal_errors(true);
         $xml = simplexml_load_string($xmlString);
@@ -161,10 +172,13 @@ abstract class AdapterAbstract implements AdapterInterface
 
             libxml_clear_errors();
 
-            $this->logger->error('Error parsing XML response.', [
-                'response' => $xmlString,
-                'errors' => $xml_errors,
-            ]);
+            $this->logger->error(
+                'Error parsing XML response.',
+                [
+                    'response' => $xmlString,
+                    'errors' => $xml_errors,
+                ]
+            );
             return null;
         }
 
