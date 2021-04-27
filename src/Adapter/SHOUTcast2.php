@@ -110,10 +110,10 @@ final class SHOUTcast2 extends AdapterAbstract
         $clients = array_map(
             function ($listener) use ($mount) {
                 return new Client(
-                    $listener['uid'],
-                    $listener['xff'] ?: $listener['hostname'],
-                    $listener['useragent'],
-                    $listener['connecttime'],
+                    (string)$listener['uid'],
+                    (string)$listener['xff'] ?: $listener['hostname'],
+                    (string)$listener['useragent'],
+                    (int)$listener['connecttime'],
                     $mount
                 );
             },
