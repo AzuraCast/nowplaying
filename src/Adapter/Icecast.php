@@ -113,7 +113,7 @@ final class Icecast extends AdapterAbstract
                 $bitrate,
                 $row['server_type']
             );
-            $np->listeners = new Listeners($row['listeners']);
+            $np->listeners = new Listeners((int)$row['listeners']);
 
             $mountName = parse_url($row['listenurl'], \PHP_URL_PATH);
             $npReturn[$mountName] = $np;
