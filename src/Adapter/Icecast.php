@@ -222,17 +222,14 @@ final class Icecast extends AdapterAbstract
         }
 
         $clients = [];
-
-        if ((int)$xml->source->listeners > 0) {
-            foreach ($xml->source->listener as $listener) {
-                $clients[] = new Client(
-                    (string)$listener->ID,
-                    (string)$listener->IP,
-                    (string)$listener->UserAgent,
-                    (int)$listener->Connected,
-                    $mount
-                );
-            }
+        foreach ($xml->source->listener as $listener) {
+            $clients[] = new Client(
+                (string)$listener->ID,
+                (string)$listener->IP,
+                (string)$listener->UserAgent,
+                (int)$listener->Connected,
+                $mount
+            );
         }
 
         return $uniqueOnly
