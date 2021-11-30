@@ -36,7 +36,7 @@ abstract class AdapterAbstract implements AdapterInterface
         // Detect a username/password in the base URI itself.
         $uriUserInfo = $baseUri->getUserInfo();
         if ('' !== $uriUserInfo) {
-            [$uriUsername, $uriPassword] = explode(':', $uriUserInfo);
+            [$uriUsername, $uriPassword] = explode(':', urldecode($uriUserInfo));
 
             $this->setAdminUsername($uriUsername);
             $this->setAdminPassword($uriPassword);
