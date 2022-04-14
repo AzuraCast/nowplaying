@@ -46,7 +46,7 @@ final class Icecast extends AdapterAbstract
         return $np;
     }
 
-    protected function getJsonNowPlaying(?string $mount = null): ?Result
+    private function getJsonNowPlaying(?string $mount = null): ?Result
     {
         $request = $this->requestFactory->createRequest(
             'GET',
@@ -130,7 +130,7 @@ final class Icecast extends AdapterAbstract
         return $npAggregate;
     }
 
-    protected function getXmlNowPlaying(?string $mount = null): ?Result
+    private function getXmlNowPlaying(?string $mount = null): ?Result
     {
         $request = $this->requestFactory->createRequest(
             'GET',
@@ -169,8 +169,8 @@ final class Icecast extends AdapterAbstract
         $title = (string)$row->title;
         $np->currentSong = new CurrentSong(
             '',
-            $title ?? '',
-            $artist ?? '',
+            $title,
+            $artist,
             ' - '
         );
 

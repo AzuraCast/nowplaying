@@ -28,13 +28,14 @@ final class CurrentSong
         }
 
         if (!empty($text) && (empty($title) || empty($artist))) {
-            $string_parts = explode($delimiter, $text) ?: [$text];
+            /** @var non-empty-string $delimiter */
+            $string_parts = explode($delimiter, $text);
 
             // If not normally delimited, return "text" only.
             if (\count($string_parts) === 1) {
                 $title = $text;
             } else {
-                $title = trim(array_pop($string_parts) ?? '');
+                $title = trim(array_pop($string_parts));
                 $artist = trim(implode($delimiter, $string_parts));
             }
         }
