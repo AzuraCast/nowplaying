@@ -50,7 +50,9 @@ final class Icecast extends AdapterAbstract
     {
         $request = $this->requestFactory->createRequest(
             'GET',
-            $this->baseUri->withPath('/status-json.xsl')
+            $this->baseUri->withPath(
+                $this->baseUri->getPath().'/status-json.xsl'
+            )
         );
 
         $payload = $this->getUrl($request);
@@ -134,7 +136,9 @@ final class Icecast extends AdapterAbstract
     {
         $request = $this->requestFactory->createRequest(
             'GET',
-            $this->baseUri->withPath('/admin/stats')
+            $this->baseUri->withPath(
+                $this->baseUri->getPath().'/admin/stats'
+            )
         );
 
         $payload = $this->getUrl($request);
@@ -201,14 +205,15 @@ final class Icecast extends AdapterAbstract
 
         $request = $this->requestFactory->createRequest(
             'GET',
-            $this->baseUri->withPath('/admin/listclients')
-                ->withQuery(
-                    http_build_query(
-                        [
-                            'mount' => $mount,
-                        ]
-                    )
+            $this->baseUri->withPath(
+                $this->baseUri->getPath().'/admin/listclients'
+            )->withQuery(
+                http_build_query(
+                    [
+                        'mount' => $mount,
+                    ]
                 )
+            )
         );
 
         $returnRaw = $this->getUrl($request);

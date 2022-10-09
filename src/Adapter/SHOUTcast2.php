@@ -32,8 +32,9 @@ final class SHOUTcast2 extends AdapterAbstract
         } else {
             $request = $this->requestFactory->createRequest(
                 'GET',
-                $this->baseUri->withPath('/stats')
-                    ->withQuery(http_build_query($query))
+                $this->baseUri->withPath(
+                    $this->baseUri->getPath().'/stats'
+                )->withQuery(http_build_query($query))
             );
         }
 
@@ -85,8 +86,9 @@ final class SHOUTcast2 extends AdapterAbstract
 
         $request = $this->requestFactory->createRequest(
             'GET',
-            $this->baseUri->withPath('/admin.cgi')
-                ->withQuery(http_build_query($query))
+            $this->baseUri->withPath(
+                $this->baseUri->getPath().'/admin.cgi'
+            )->withQuery(http_build_query($query))
         );
 
         $return_raw = $this->getUrl($request);
