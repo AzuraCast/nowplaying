@@ -16,9 +16,7 @@ final class SHOUTcast1 extends AdapterAbstract
     {
         $request = $this->requestFactory->createRequest(
             'GET',
-            $this->baseUri->withPath(
-                $this->baseUri->getPath().'/7.html'
-            )
+            $this->baseUriWithPathAndQuery('/7.html')
         );
 
         $returnRaw = $this->getUrl($request);

@@ -130,6 +130,27 @@ abstract class AdapterAbstract implements AdapterInterface
     }
 
     /**
+     * @param array<string, string> $query
+     */
+    protected function baseUriWithPathAndQuery(
+        string $path = '',
+        array $query = []
+    ): UriInterface {
+        $uri = $this->baseUri;
+
+        if ('' !== $path) {
+            $uri = $uri->withPath(
+                rtrim($uri->getPath(), '/').$path
+            );
+        }
+        if (0 !== count($query)) {
+            $uri = $uri->withQuery(http_build_query($query));
+        }
+
+        return $uri;
+    }
+
+    /**
      * Given a list of clients, return only ones with unique UserAgent and IP combinations.
      *
      * @param Client[] $clients
