@@ -4,17 +4,24 @@ declare(strict_types=1);
 
 namespace NowPlaying\Adapter;
 
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Promise\PromiseInterface;
+use GuzzleHttp\Promise\Utils;
 use NowPlaying\Result\Client;
+use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Result;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\RequestInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
 use SimpleXMLElement;
 
 abstract class AdapterAbstract implements AdapterInterface
 {
+    protected const PROMISE_NOW_PLAYING = 'np';
+    protected const PROMISE_CLIENTS = 'clients';
+
     protected UriInterface $baseUri;
 
     protected RequestFactoryInterface $requestFactory;
@@ -67,21 +74,43 @@ abstract class AdapterAbstract implements AdapterInterface
     /**
      * @inheritDoc
      */
-    abstract public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result;
+    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
+    {
+        return $this->getNowPlayingAsync($mount, $includeClients)->wait();
+    }
 
     /**
      * @inheritDoc
      */
-    abstract public function getClients(?string $mount = null, bool $uniqueOnly = true): array;
+    abstract public function getNowPlayingAsync(
+        ?string $mount = null,
+        bool $includeClients = false
+    ): PromiseInterface;
+
+    /**
+     * @inheritDoc
+     */
+    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
+    {
+        return $this->getClientsAsync($mount, $uniqueOnly)->wait();
+    }
+
+    /**
+     * @inheritDoc
+     */
+    abstract public function getClientsAsync(
+        ?string $mount = null,
+        bool $uniqueOnly = true
+    ): PromiseInterface;
 
     /**
      * Fetch a remote URL.
      *
      * @param RequestInterface $request
      *
-     * @return string|null
+     * @return PromiseInterface
      */
-    protected function getUrl(RequestInterface $request): ?string
+    protected function getUrl(RequestInterface $request): PromiseInterface
     {
         if (!$request->hasHeader('User-Agent')) {
             $request = $request->withHeader(
@@ -101,32 +130,34 @@ abstract class AdapterAbstract implements AdapterInterface
             sprintf(
                 'Sending %s request to %s',
                 strtoupper($request->getMethod()),
-                (string)$request->getUri()
+                $request->getUri()
             )
         );
 
-        $response = $this->client->sendRequest($request);
+        return $this->client->sendAsync($request)->then(
+            function(ResponseInterface $response) use ($request) {
+                if ($response->getStatusCode() !== 200) {
+                    $this->logger->error(
+                        sprintf('Request returned status code %d.', $response->getStatusCode()),
+                        [
+                            'body' => (string)$request->getBody(),
+                        ]
+                    );
+                    return null;
+                }
 
-        if ($response->getStatusCode() !== 200) {
-            $this->logger->error(
-                sprintf('Request returned status code %d.', $response->getStatusCode()),
-                [
-                    'body' => (string)$request->getBody(),
-                ]
-            );
-            return null;
-        }
+                $body = (string)$response->getBody();
 
-        $body = (string)$response->getBody();
+                $this->logger->debug(
+                    'Raw body from response.',
+                    [
+                        'response' => $body,
+                    ]
+                );
 
-        $this->logger->debug(
-            'Raw body from response.',
-            [
-                'response' => $body,
-            ]
+                return $body;
+            }
         );
-
-        return $body;
     }
 
     /**
@@ -151,13 +182,48 @@ abstract class AdapterAbstract implements AdapterInterface
     }
 
     /**
+     * @param PromiseInterface[] $promises
+     * 
+     * @return PromiseInterface
+     */
+    protected function assembleNowPlayingResult(
+        array $promises
+    ): PromiseInterface {
+        return Utils::settle($promises)->then(
+            function ($promises) {
+                /** @var Result|null $np */
+                $np = $promises[self::PROMISE_NOW_PLAYING]['value'] ?? null;
+                if (null === $np) {
+                    return Result::blank();
+                }
+
+                if (isset($promises[self::PROMISE_CLIENTS])) {
+                    /** @var Client[]|null $clients */
+                    $clients = $promises[self::PROMISE_CLIENTS]['value'] ?? null;
+
+                    if (null !== $clients) {
+                        $np->clients = $clients;
+
+                        $np->listeners = new Listeners(
+                            $np->listeners->total,
+                            count($np->clients)
+                        );
+                    }
+                }
+
+                return $np;
+            }
+        );
+    }
+
+    /**
      * Given a list of clients, return only ones with unique UserAgent and IP combinations.
      *
      * @param Client[] $clients
      *
      * @return Client[]
      */
-    protected function getUniqueListeners($clients): array
+    protected function getUniqueListeners(array $clients): array
     {
         $uniqueClients = [];
         foreach ($clients as $client) {

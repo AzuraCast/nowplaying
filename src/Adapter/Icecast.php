@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace NowPlaying\Adapter;
 
+use GuzzleHttp\Promise\Create;
+use GuzzleHttp\Promise\PromiseInterface;
 use JsonException;
 use NowPlaying\Result\Client;
 use NowPlaying\Result\CurrentSong;
@@ -13,47 +15,41 @@ use NowPlaying\Result\Result;
 
 final class Icecast extends AdapterAbstract
 {
-    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
+    public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {
-        $np = null;
-
         if (!empty($this->adminPassword)) {
-            // If the XML doesn't parse for any reason, fail back to the JSON below.
-            $np = $this->getXmlNowPlaying($mount);
+            $promises = [
+                self::PROMISE_NOW_PLAYING => $this->getXmlNowPlaying($mount)
+            ];
 
-            if (null === $np) {
-                $this->logger->warning('Could not fetch XML data; falling back to public JSON.');
+            if ($includeClients) {
+                $promises[self::PROMISE_CLIENTS] = $this->getClientsAsync($mount, true);
             }
+
+            return $this->assembleNowPlayingResult($promises);
         }
 
-        if (null === $np) {
-            $np = $this->getJsonNowPlaying($mount);
-        }
-
-        if (null === $np) {
-            return Result::blank();
-        }
-
-        if ($includeClients && !empty($this->adminPassword)) {
-            $np->clients = $this->getClients($mount, true);
-
-            $np->listeners = new Listeners(
-                $np->listeners->total,
-                count($np->clients)
-            );
-        }
-
-        return $np;
+        return $this->getJsonNowPlaying($mount)->then(
+            fn(?Result $result) => $result ?? Result::blank()
+        );
     }
 
-    private function getJsonNowPlaying(?string $mount = null): ?Result
+    private function getJsonNowPlaying(?string $mount = null): PromiseInterface
     {
         $request = $this->requestFactory->createRequest(
             'GET',
             $this->baseUriWithPathAndQuery('/status-json.xsl')
         );
 
-        $payload = $this->getUrl($request);
+        return $this->getUrl($request)->then(
+            fn(?string $payload) => $this->processJsonNowPlaying($payload, $mount)
+        );
+    }
+
+    private function processJsonNowPlaying(
+        ?string $payload,
+        ?string $mount = null
+    ): ?Result {
         if (!$payload) {
             return null;
         }
@@ -130,14 +126,22 @@ final class Icecast extends AdapterAbstract
         return $npAggregate;
     }
 
-    private function getXmlNowPlaying(?string $mount = null): ?Result
+    private function getXmlNowPlaying(?string $mount = null): PromiseInterface
     {
         $request = $this->requestFactory->createRequest(
             'GET',
             $this->baseUriWithPathAndQuery('/admin/stats')
         );
 
-        $payload = $this->getUrl($request);
+        return $this->getUrl($request)->then(
+            fn(?string $payload) => $this->processXmlNowPlaying($payload, $mount)
+        );
+    }
+
+    private function processXmlNowPlaying(
+        ?string $payload,
+        ?string $mount = null
+    ): ?Result {
         if (!$payload) {
             return null;
         }
@@ -192,11 +196,11 @@ final class Icecast extends AdapterAbstract
         return $np;
     }
 
-    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
+    public function getClientsAsync(?string $mount = null, bool $uniqueOnly = true): PromiseInterface
     {
         if (empty($mount)) {
             $this->logger->error('This adapter requires a mount point name.');
-            return [];
+            return Create::promiseFor([]);
         }
 
         $request = $this->requestFactory->createRequest(
@@ -209,29 +213,32 @@ final class Icecast extends AdapterAbstract
             )
         );
 
-        $returnRaw = $this->getUrl($request);
-        if (empty($returnRaw)) {
-            return [];
-        }
+        return $this->getUrl($request)->then(
+            function(?string $returnRaw) use ($mount, $uniqueOnly) {
+                if (empty($returnRaw)) {
+                    return [];
+                }
 
-        $xml = $this->getSimpleXml($returnRaw);
-        if (null === $xml) {
-            return [];
-        }
+                $xml = $this->getSimpleXml($returnRaw);
+                if (null === $xml) {
+                    return [];
+                }
 
-        $clients = [];
-        foreach ($xml->source->listener as $listener) {
-            $clients[] = new Client(
-                (string)$listener->ID,
-                (string)$listener->IP,
-                (string)$listener->UserAgent,
-                (int)$listener->Connected,
-                $mount
-            );
-        }
+                $clients = [];
+                foreach ($xml->source->listener as $listener) {
+                    $clients[] = new Client(
+                        (string)$listener->ID,
+                        (string)$listener->IP,
+                        (string)$listener->UserAgent,
+                        (int)$listener->Connected,
+                        $mount
+                    );
+                }
 
-        return $uniqueOnly
-            ? $this->getUniqueListeners($clients)
-            : $clients;
+                return $uniqueOnly
+                    ? $this->getUniqueListeners($clients)
+                    : $clients;
+            }
+        );
     }
 }

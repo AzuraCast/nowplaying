@@ -4,16 +4,18 @@ declare(strict_types=1);
 
 namespace NowPlaying\Adapter;
 
+use GuzzleHttp\Promise\PromiseInterface;
 use JsonException;
 use NowPlaying\Result\Client;
 use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Meta;
 use NowPlaying\Result\Result;
+use Psr\Http\Message\RequestInterface;
 
 final class SHOUTcast2 extends AdapterAbstract
 {
-    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
+    public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {
         $query = [];
         if (!empty($mount)) {
@@ -28,52 +30,62 @@ final class SHOUTcast2 extends AdapterAbstract
                 'GET',
                 $this->baseUriWithPathAndQuery('/admin.cgi', $query)
             );
-        } else {
-            $request = $this->requestFactory->createRequest(
-                'GET',
-                $this->baseUriWithPathAndQuery('/stats', $query)
-            );
+
+            $promises = [
+                self::PROMISE_NOW_PLAYING => $this->processNowPlayingRequest($request)
+            ];
+
+            if ($includeClients) {
+                $promises[self::PROMISE_CLIENTS] = $this->getClientsAsync($mount, true);
+            }
+
+            return $this->assembleNowPlayingResult($promises);
         }
 
-        $payload = $this->getUrl($request);
-        if (empty($payload)) {
-            return Result::blank();
-        }
-
-        $xml = $this->getSimpleXml($payload);
-        if (null === $xml) {
-            return Result::blank();
-        }
-
-        // Fix ShoutCast 2 bug where 3 spaces = " - "
-        $currentSongText = (string)$xml->SONGTITLE;
-        $currentSongText = str_replace('   ', ' - ', $currentSongText);
-
-        $np = new Result;
-        $np->currentSong = new CurrentSong($currentSongText);
-        $np->listeners = new Listeners(
-            (int)$xml->CURRENTLISTENERS,
-            (int)$xml->UNIQUELISTENERS
-        );
-        $np->meta = new Meta(
-            !empty($np->currentSong->text),
-            (int)$xml->BITRATE,
-            (string)$xml->CONTENT
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUriWithPathAndQuery('/stats', $query)
         );
 
-        if ($includeClients && !empty($this->adminPassword)) {
-            $np->clients = $this->getClients($mount, true);
-
-            $np->listeners = new Listeners(
-                $np->listeners->total,
-                count($np->clients)
-            );
-        }
-
-        return $np;
+        return $this->processNowPlayingRequest($request);
     }
 
-    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
+    private function processNowPlayingRequest(
+        RequestInterface $request
+    ): PromiseInterface {
+        return $this->getUrl($request)->then(
+            function(?string $payload) {
+                if (empty($payload)) {
+                    return Result::blank();
+                }
+
+                $xml = $this->getSimpleXml($payload);
+                if (null === $xml) {
+                    return Result::blank();
+                }
+
+                // Fix ShoutCast 2 bug where 3 spaces = " - "
+                $currentSongText = (string)$xml->SONGTITLE;
+                $currentSongText = str_replace('   ', ' - ', $currentSongText);
+
+                $np = new Result;
+                $np->currentSong = new CurrentSong($currentSongText);
+                $np->listeners = new Listeners(
+                    (int)$xml->CURRENTLISTENERS,
+                    (int)$xml->UNIQUELISTENERS
+                );
+                $np->meta = new Meta(
+                    !empty($np->currentSong->text),
+                    (int)$xml->BITRATE,
+                    (string)$xml->CONTENT
+                );
+
+                return $np;
+            }
+        );
+    }
+
+    public function getClientsAsync(?string $mount = null, bool $uniqueOnly = true): PromiseInterface
     {
         $query = [
             'sid' => (empty($mount)) ? 1 : $mount,
@@ -88,39 +100,42 @@ final class SHOUTcast2 extends AdapterAbstract
             )->withQuery(http_build_query($query))
         );
 
-        $return_raw = $this->getUrl($request);
-        if (empty($return_raw)) {
-            return [];
-        }
+        return $this->getUrl($request)->then(
+            function(?string $return_raw) use ($mount, $uniqueOnly) {
+                if (empty($return_raw)) {
+                    return [];
+                }
 
-        try {
-            $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
-        } catch (JsonException $e) {
-            $this->logger->error(
-                sprintf('JSON parsing error: %s', $e->getMessage()),
-                [
-                    'exception' => $e,
-                    'response' => $return_raw,
-                ]
-            );
-            return [];
-        }
+                try {
+                    $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException $e) {
+                    $this->logger->error(
+                        sprintf('JSON parsing error: %s', $e->getMessage()),
+                        [
+                            'exception' => $e,
+                            'response' => $return_raw,
+                        ]
+                    );
+                    return [];
+                }
 
-        $clients = array_map(
-            function ($listener) use ($mount) {
-                return new Client(
-                    (string)$listener['uid'],
-                    (string)$listener['xff'] ?: $listener['hostname'],
-                    (string)$listener['useragent'],
-                    (int)$listener['connecttime'],
-                    $mount
+                $clients = array_map(
+                    function ($listener) use ($mount) {
+                        return new Client(
+                            (string)$listener['uid'],
+                            (string)$listener['xff'] ?: $listener['hostname'],
+                            (string)$listener['useragent'],
+                            (int)$listener['connecttime'],
+                            $mount
+                        );
+                    },
+                    (array)$listeners
                 );
-            },
-            (array)$listeners
-        );
 
-        return $uniqueOnly
-            ? $this->getUniqueListeners($clients)
-            : $clients;
+                return $uniqueOnly
+                    ? $this->getUniqueListeners($clients)
+                    : $clients;
+            }
+        );
     }
 }

@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace NowPlaying;
 
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
 use Http\Discovery\Psr17FactoryDiscovery;
 use Http\Discovery\Psr18ClientDiscovery;
 use NowPlaying\Adapter\AdapterAbstract;
 use NowPlaying\Adapter\Icecast;
 use NowPlaying\Adapter\SHOUTcast1;
 use NowPlaying\Adapter\SHOUTcast2;
-use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Psr\Http\Message\UriInterface;
@@ -48,9 +49,9 @@ class AdapterFactory
             throw new \InvalidArgumentException('No auto-discovery mechanism available for PSR factories.');
         }
 
-        $this->uriFactory = $uriFactory ?? Psr17FactoryDiscovery::findUrlFactory();
+        $this->uriFactory = $uriFactory ?? Psr17FactoryDiscovery::findUriFactory();
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
-        $this->client = $client ?? Psr18ClientDiscovery::find();
+        $this->client = $client ?? new Client();
         $this->logger = $logger ?? new NullLogger;
     }
 

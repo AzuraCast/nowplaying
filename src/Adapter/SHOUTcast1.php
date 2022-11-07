@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace NowPlaying\Adapter;
 
+use GuzzleHttp\Promise\PromiseInterface;
 use NowPlaying\Exception\UnsupportedException;
 use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
@@ -12,15 +13,22 @@ use NowPlaying\Result\Result;
 
 final class SHOUTcast1 extends AdapterAbstract
 {
-    public function getNowPlaying(?string $mount = null, bool $includeClients = false): Result
+    public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {
         $request = $this->requestFactory->createRequest(
             'GET',
             $this->baseUriWithPathAndQuery('/7.html')
         );
 
-        $returnRaw = $this->getUrl($request);
-        if (empty($returnRaw)) {
+        return $this->getUrl($request)->then(
+            fn(?string $returnRaw) => $this->processNowPlaying($returnRaw)
+        );
+    }
+
+    private function processNowPlaying(
+        ?string $returnRaw = null
+    ): Result {
+        if (null === $returnRaw) {
             return Result::blank();
         }
 
@@ -39,7 +47,7 @@ final class SHOUTcast1 extends AdapterAbstract
         return $np;
     }
 
-    public function getClients(?string $mount = null, bool $uniqueOnly = true): array
+    public function getClientsAsync(?string $mount = null, bool $uniqueOnly = true): PromiseInterface
     {
         throw new UnsupportedException;
     }

@@ -8,6 +8,7 @@
         "ext-xml": "*",
         "ext-libxml": "*",
         "ext-json": "*",
+        "guzzlehttp/guzzle": ">7",
         "psr/http-client": "*",
         "psr/http-factory": "*",
         "psr/log": ">=1"
@@ -17,9 +18,7 @@
         "roave/security-advisories": "dev-latest",
         "php-parallel-lint/php-console-highlighter": "^1",
         "php-parallel-lint/php-parallel-lint": "^1.3",
-        "php-http/discovery": "^1.9",
-        "guzzlehttp/guzzle": "^7",
-        "http-interop/http-factory-guzzle": "^1.0"
+        "php-http/discovery": "^1.9"
     },
     "scripts": {
         "test": [
