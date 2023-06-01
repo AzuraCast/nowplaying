@@ -10,6 +10,10 @@ use NowPlaying\Result\Result;
 
 interface AdapterInterface
 {
+    public function setAdminUsername(string $adminUsername): self;
+
+    public function setAdminPassword(?string $adminPassword): self;
+
     /**
      * Return the current "Now Playing" data for the instance.
      *
