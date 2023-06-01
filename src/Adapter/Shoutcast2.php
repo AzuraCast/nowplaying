@@ -11,28 +11,16 @@ use NowPlaying\Result\CurrentSong;
 use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Meta;
 use NowPlaying\Result\Result;
-use Psr\Http\Message\RequestInterface;
 
 final class Shoutcast2 extends AdapterAbstract
 {
     public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {
-        $query = [];
-        if (!empty($mount)) {
-            $query['sid'] = $mount;
-        }
-
-        if (!empty($this->adminPassword)) {
-            $query['mode'] = 'viewxml';
-            $query['page'] = '7';
-
-            $request = $this->requestFactory->createRequest(
-                'GET',
-                $this->baseUriWithPathAndQuery('/admin.cgi', $query)
-            );
-
+        if (null !== $this->adminPassword) {
             $promises = [
-                self::PROMISE_NOW_PLAYING => $this->processNowPlayingRequest($request)
+                self::PROMISE_NOW_PLAYING => $this->getAdminNowPlaying($mount)->then(
+                    fn(?Result $result) => $result ?? $this->getPublicNowPlaying($mount)
+                )
             ];
 
             if ($includeClients) {
@@ -42,47 +30,76 @@ final class Shoutcast2 extends AdapterAbstract
             return $this->assembleNowPlayingResult($promises);
         }
 
+        return $this->getPublicNowPlaying($mount)->then(
+            fn(?Result $result) => $result ?? Result::blank()
+        );
+    }
+
+    private function getAdminNowPlaying(?string $mount): PromiseInterface
+    {
+        $query = [];
+        if (!empty($mount)) {
+            $query['sid'] = $mount;
+        }
+
+        $query['mode'] = 'viewxml';
+        $query['page'] = '7';
+
+        $request = $this->requestFactory->createRequest(
+            'GET',
+            $this->baseUriWithPathAndQuery('/admin.cgi', $query)
+        );
+
+        return $this->getUrl($request)->then(
+            fn(?string $payload) => $this->handleNowPlayingPayload($payload)
+        );
+    }
+
+    private function getPublicNowPlaying(?string $mount): PromiseInterface
+    {
+        $query = [];
+        if (!empty($mount)) {
+            $query['sid'] = $mount;
+        }
+
         $request = $this->requestFactory->createRequest(
             'GET',
             $this->baseUriWithPathAndQuery('/stats', $query)
         );
 
-        return $this->processNowPlayingRequest($request);
+        return $this->getUrl($request)->then(
+            fn(?string $payload) => $this->handleNowPlayingPayload($payload)
+        );
     }
 
-    private function processNowPlayingRequest(
-        RequestInterface $request
-    ): PromiseInterface {
-        return $this->getUrl($request)->then(
-            function(?string $payload) {
-                if (empty($payload)) {
-                    return Result::blank();
-                }
+    private function handleNowPlayingPayload(?string $payload): ?Result
+    {
+        if (empty($payload)) {
+            return null;
+        }
 
-                $xml = $this->getSimpleXml($payload);
-                if (null === $xml) {
-                    return Result::blank();
-                }
+        $xml = $this->getSimpleXml($payload);
+        if (null === $xml) {
+            return null;
+        }
 
-                // Fix ShoutCast 2 bug where 3 spaces = " - "
-                $currentSongText = (string)$xml->SONGTITLE;
-                $currentSongText = str_replace('   ', ' - ', $currentSongText);
+        // Fix ShoutCast 2 bug where 3 spaces = " - "
+        $currentSongText = (string)$xml->SONGTITLE;
+        $currentSongText = str_replace('   ', ' - ', $currentSongText);
 
-                $np = new Result;
-                $np->currentSong = new CurrentSong($currentSongText);
-                $np->listeners = new Listeners(
-                    (int)$xml->CURRENTLISTENERS,
-                    (int)$xml->UNIQUELISTENERS
-                );
-                $np->meta = new Meta(
-                    !empty($np->currentSong->text),
-                    (int)$xml->BITRATE,
-                    (string)$xml->CONTENT
-                );
-
-                return $np;
-            }
+        $np = new Result;
+        $np->currentSong = new CurrentSong($currentSongText);
+        $np->listeners = new Listeners(
+            (int)$xml->CURRENTLISTENERS,
+            (int)$xml->UNIQUELISTENERS
         );
+        $np->meta = new Meta(
+            !empty($np->currentSong->text),
+            (int)$xml->BITRATE,
+            (string)$xml->CONTENT
+        );
+
+        return $np;
     }
 
     public function getClientsAsync(?string $mount = null, bool $uniqueOnly = true): PromiseInterface

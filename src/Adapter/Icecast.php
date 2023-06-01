@@ -20,13 +20,7 @@ final class Icecast extends AdapterAbstract
         if (null !== $this->adminPassword) {
             $promises = [
                 self::PROMISE_NOW_PLAYING => $this->getXmlNowPlaying($mount)->then(
-                    function(?Result $result) use ($mount) {
-                        if (null === $result) {
-                            return $this->getJsonNowPlaying($mount);
-                        }
-
-                        return $result;
-                    }
+                    fn(?Result $result) => $result ?? $this->getJsonNowPlaying($mount)
                 )
             ];
 
