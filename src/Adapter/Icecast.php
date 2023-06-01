@@ -17,9 +17,17 @@ final class Icecast extends AdapterAbstract
 {
     public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {
-        if (!empty($this->adminPassword)) {
+        if (null !== $this->adminPassword) {
             $promises = [
-                self::PROMISE_NOW_PLAYING => $this->getXmlNowPlaying($mount)
+                self::PROMISE_NOW_PLAYING => $this->getXmlNowPlaying($mount)->then(
+                    function(?Result $result) use ($mount) {
+                        if (null === $result) {
+                            return $this->getJsonNowPlaying($mount);
+                        }
+
+                        return $result;
+                    }
+                )
             ];
 
             if ($includeClients) {
