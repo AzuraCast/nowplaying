@@ -7,6 +7,7 @@ namespace NowPlaying\Adapter;
 use GuzzleHttp\ClientInterface;
 use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\Utils;
+use GuzzleHttp\RequestOptions;
 use NowPlaying\Result\Client;
 use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Result;
@@ -126,7 +127,12 @@ abstract class AdapterAbstract implements AdapterInterface
             )
         );
 
-        return $this->client->sendAsync($request)->then(
+        return $this->client->sendAsync(
+            $request,
+            [
+                RequestOptions::HTTP_ERRORS => false
+            ]
+        )->then(
             function(ResponseInterface $response) use ($request) {
                 if ($response->getStatusCode() !== 200) {
                     $this->logger->error(
@@ -183,8 +189,27 @@ abstract class AdapterAbstract implements AdapterInterface
     ): PromiseInterface {
         return Utils::settle($promises)->then(
             function ($promises) {
+                if (PromiseInterface::REJECTED === $promises[self::PROMISE_NOW_PLAYING]['state']) {
+                    $exception = $promises[self::PROMISE_NOW_PLAYING]['reason'] ?? null;
+
+                    if ($exception instanceof \Exception) {
+                        $this->logger->error(
+                            sprintf(
+                                'NowPlaying request encountered an exception: %s',
+                                $exception->getMessage()
+                            ),
+                            [
+                                'exception' => $exception
+                            ]
+                        );
+                    }
+
+                    return Result::blank();
+                }
+
                 /** @var Result|null $np */
                 $np = $promises[self::PROMISE_NOW_PLAYING]['value'] ?? null;
+
                 if (null === $np) {
                     return Result::blank();
                 }
