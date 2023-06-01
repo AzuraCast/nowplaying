@@ -24,20 +24,14 @@ abstract class AdapterAbstract implements AdapterInterface
 
     protected UriInterface $baseUri;
 
-    protected RequestFactoryInterface $requestFactory;
-
-    protected ClientInterface $client;
-
-    protected LoggerInterface $logger;
-
     protected string $adminUsername = 'admin';
 
     protected ?string $adminPassword = null;
 
     public function __construct(
-        RequestFactoryInterface $requestFactory,
-        ClientInterface $client,
-        LoggerInterface $logger,
+        protected RequestFactoryInterface $requestFactory,
+        protected ClientInterface $client,
+        protected LoggerInterface $logger,
         UriInterface $baseUri
     ) {
         // Detect a username/password in the base URI itself.
@@ -51,22 +45,20 @@ abstract class AdapterAbstract implements AdapterInterface
             $baseUri = $baseUri->withUserInfo('');
         }
 
-        $this->requestFactory = $requestFactory;
-        $this->client = $client;
-        $this->logger = $logger;
         $this->baseUri = $baseUri;
     }
 
     public function setAdminUsername(string $adminUsername): self
     {
-        $this->adminUsername = $adminUsername;
+        $this->adminUsername = trim($adminUsername);
 
         return $this;
     }
 
     public function setAdminPassword(?string $adminPassword): self
     {
-        $this->adminPassword = $adminPassword;
+        $adminPassword = trim($adminPassword ?? '');
+        $this->adminPassword = !empty($adminPassword) ? $adminPassword : null;
 
         return $this;
     }
@@ -183,7 +175,7 @@ abstract class AdapterAbstract implements AdapterInterface
 
     /**
      * @param PromiseInterface[] $promises
-     * 
+     *
      * @return PromiseInterface
      */
     protected function assembleNowPlayingResult(
