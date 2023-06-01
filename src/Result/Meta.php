@@ -6,19 +6,10 @@ namespace NowPlaying\Result;
 
 final class Meta
 {
-    public bool $online;
-
-    public ?int $bitrate;
-
-    public ?string $format;
-
     public function __construct(
-        bool $online = false,
-        ?int $bitrate = null,
-        ?string $format = null
+        public bool $online = false,
+        public ?int $bitrate = null,
+        public ?string $format = null
     ) {
-        $this->online = $online;
-        $this->bitrate = $bitrate;
-        $this->format = $format;
     }
 }

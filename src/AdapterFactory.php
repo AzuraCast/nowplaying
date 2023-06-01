@@ -7,11 +7,8 @@ namespace NowPlaying;
 use GuzzleHttp\Client;
 use GuzzleHttp\ClientInterface;
 use Http\Discovery\Psr17FactoryDiscovery;
-use Http\Discovery\Psr18ClientDiscovery;
-use NowPlaying\Adapter\AdapterAbstract;
-use NowPlaying\Adapter\Icecast;
-use NowPlaying\Adapter\SHOUTcast1;
-use NowPlaying\Adapter\SHOUTcast2;
+use NowPlaying\Adapter\AdapterInterface;
+use NowPlaying\Enums\AdapterTypes;
 use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Psr\Http\Message\UriInterface;
@@ -20,10 +17,6 @@ use Psr\Log\NullLogger;
 
 class AdapterFactory
 {
-    public const ADAPTER_ICECAST = 'icecast';
-    public const ADAPTER_SHOUTCAST1 = 'shoutcast1';
-    public const ADAPTER_SHOUTCAST2 = 'shoutcast2';
-
     protected UriFactoryInterface $uriFactory;
 
     protected RequestFactoryInterface $requestFactory;
@@ -32,12 +25,6 @@ class AdapterFactory
 
     protected LoggerInterface $logger;
 
-    /**
-     * @param UriFactoryInterface|null $uriFactory
-     * @param RequestFactoryInterface|null $requestFactory
-     * @param ClientInterface|null $client
-     * @param LoggerInterface|null $logger
-     */
     public function __construct(
         ?UriFactoryInterface $uriFactory = null,
         ?RequestFactoryInterface $requestFactory = null,
@@ -55,33 +42,15 @@ class AdapterFactory
         $this->logger = $logger ?? new NullLogger;
     }
 
-    /**
-     * @param string $adapterType
-     * @param string|UriInterface $baseUri
-     *
-     * @return AdapterAbstract
-     */
     public function getAdapter(
-        string $adapterType,
-        $baseUri
-    ): AdapterAbstract {
+        AdapterTypes $adapterType,
+        string|UriInterface $baseUri
+    ): AdapterInterface {
         if (!($baseUri instanceof UriInterface)) {
             $baseUri = $this->uriFactory->createUri($baseUri);
         }
 
-        $adapterClassLookup = [
-            self::ADAPTER_ICECAST => Icecast::class,
-            self::ADAPTER_SHOUTCAST1 => SHOUTcast1::class,
-            self::ADAPTER_SHOUTCAST2 => SHOUTcast2::class,
-        ];
-
-        if (!isset($adapterClassLookup[$adapterType])) {
-            throw new \InvalidArgumentException('Invalid adapter provided.');
-        }
-
-        /** @var AdapterAbstract $adapterClass */
-        $adapterClass = $adapterClassLookup[$adapterType];
-
+        $adapterClass = $adapterType->getAdapterClass();
         return new $adapterClass(
             $this->requestFactory,
             $this->client,
@@ -90,33 +59,27 @@ class AdapterFactory
         );
     }
 
-    /**
-     * @param string|UriInterface $baseUri
-     *
-     * @return AdapterAbstract
-     */
-    public function getIcecastAdapter($baseUri): AdapterAbstract
+    public function getIcecastAdapter(string|UriInterface $baseUri): AdapterInterface
     {
-        return $this->getAdapter(self::ADAPTER_ICECAST, $baseUri);
+        return $this->getAdapter(
+            AdapterTypes::Icecast,
+            $baseUri
+        );
     }
 
-    /**
-     * @param string|UriInterface $baseUri
-     *
-     * @return AdapterAbstract
-     */
-    public function getShoutcast1Adapter($baseUri): AdapterAbstract
+    public function getShoutcast1Adapter(string|UriInterface $baseUri): AdapterInterface
     {
-        return $this->getAdapter(self::ADAPTER_SHOUTCAST1, $baseUri);
+        return $this->getAdapter(
+            AdapterTypes::Shoutcast1,
+            $baseUri
+        );
     }
 
-    /**
-     * @param string|UriInterface $baseUri
-     *
-     * @return AdapterAbstract
-     */
-    public function getShoutcast2Adapter($baseUri): AdapterAbstract
+    public function getShoutcast2Adapter(string|UriInterface $baseUri): AdapterInterface
     {
-        return $this->getAdapter(self::ADAPTER_SHOUTCAST2, $baseUri);
+        return $this->getAdapter(
+            AdapterTypes::Shoutcast2,
+            $baseUri
+        );
     }
 }

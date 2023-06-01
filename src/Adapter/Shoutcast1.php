@@ -11,7 +11,7 @@ use NowPlaying\Result\Listeners;
 use NowPlaying\Result\Meta;
 use NowPlaying\Result\Result;
 
-final class SHOUTcast1 extends AdapterAbstract
+final class Shoutcast1 extends AdapterAbstract
 {
     public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {

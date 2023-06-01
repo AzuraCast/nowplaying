@@ -3,7 +3,7 @@
     "description": "A lightweight PHP adapter for viewing the current now playing data in Icecast and SHOUTcast 1/2. A part of the AzuraCast software suite.",
     "license": "Apache-2.0",
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.1",
         "ext-simplexml": "*",
         "ext-xml": "*",
         "ext-libxml": "*",

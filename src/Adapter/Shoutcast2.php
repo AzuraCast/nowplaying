@@ -13,7 +13,7 @@ use NowPlaying\Result\Meta;
 use NowPlaying\Result\Result;
 use Psr\Http\Message\RequestInterface;
 
-final class SHOUTcast2 extends AdapterAbstract
+final class Shoutcast2 extends AdapterAbstract
 {
     public function getNowPlayingAsync(?string $mount = null, bool $includeClients = false): PromiseInterface
     {
