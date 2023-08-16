@@ -37,7 +37,10 @@ final class Shoutcast1 extends AdapterAbstract
 
         // Increment listener counts in the now playing data.
         $np = new Result;
-        $np->currentSong = new CurrentSong($title);
+        $np->currentSong = new CurrentSong(
+            text: $title,
+            delimiter: '-'
+        );
         $np->listeners = new Listeners((int)$total_listeners, (int)$unique_listeners);
         $np->meta = new Meta(
             !empty($np->currentSong->text),

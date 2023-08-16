@@ -88,7 +88,10 @@ final class Shoutcast2 extends AdapterAbstract
         $currentSongText = str_replace('   ', ' - ', $currentSongText);
 
         $np = new Result;
-        $np->currentSong = new CurrentSong($currentSongText);
+        $np->currentSong = new CurrentSong(
+            text: $currentSongText,
+            delimiter: '-'
+        );
         $np->listeners = new Listeners(
             (int)$xml->CURRENTLISTENERS,
             (int)$xml->UNIQUELISTENERS
