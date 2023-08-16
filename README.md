@@ -25,16 +25,17 @@ composer require azuracast/nowplaying
 <?php
 // Example PSR-17 and PSR-18 implementation from Guzzle 7
 // Install those with:
-//   composer require guzzlehttp/guzzle:^7 http-interop/http-factory-guzzle
+//   composer require guzzlehttp/guzzle
 
+$httpFactory = new GuzzleHttp\Psr7\HttpFactory();
 $adapterFactory = new NowPlaying\AdapterFactory(
-    new Http\Factory\Guzzle\UriFactory,
-    new Http\Factory\Guzzle\RequestFactory,
+    $httpFactory,
+    $httpFactory,
     new GuzzleHttp\Client
 );
 
 $adapter = $adapterFactory->getAdapter(
-    NowPlaying\AdapterFactory::ADAPTER_SHOUTCAST2,
+    NowPlaying\Enums\AdapterType::Shoutcast2,
     'http://my-station-url.example.com:8000'
 );
 
