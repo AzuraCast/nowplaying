@@ -16,7 +16,7 @@ final class CurrentSong
         string $text = '',
         string $title = '',
         string $artist = '',
-        string $delimiter = '-'
+        string $delimiter = ' - '
     ) {
         $text = $this->cleanUpString($text);
         $title = $this->cleanUpString($title);
@@ -35,8 +35,8 @@ final class CurrentSong
             if (\count($string_parts) === 1) {
                 $title = $text;
             } else {
-                $title = trim(array_pop($string_parts));
-                $artist = trim(implode($delimiter, $string_parts));
+                $title = trim(implode($delimiter, array_slice($string_parts, 1)));
+                $artist = trim($string_parts[0]);
             }
         }
 
