@@ -38,9 +38,14 @@ final class Icecast extends AdapterAbstract
 
     private function getJsonNowPlaying(?string $mount = null): PromiseInterface
     {
+        $query = [];
+        if (!empty($mount)) {
+            $query['mount'] = $mount;
+        }
+
         $request = $this->requestFactory->createRequest(
             'GET',
-            $this->baseUriWithPathAndQuery('/status-json.xsl')
+            $this->baseUriWithPathAndQuery('/status-json.xsl', $query)
         );
 
         return $this->getUrl($request)->then(
