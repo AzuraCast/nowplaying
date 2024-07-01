@@ -18,10 +18,10 @@ jobs:
         with:
           context: .
           load: true
-          tags: azuracast_nowplaying:testing
+          tags: azuracast/nowplaying:latest
           cache-from: type=gha,mode=max
           cache-to: type=gha,mode=max
 
       - name: Run CI Test Suite
         run: |
-          docker run --rm azuracast_nowplaying:testing composer run ci
+          docker-compose run --rm cli composer run ci
