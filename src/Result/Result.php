@@ -79,10 +79,10 @@ final class Result
 
     public static function blank(): self
     {
-        $return = new self;
-        $return->currentSong = new CurrentSong;
-        $return->listeners = new Listeners;
-        $return->meta = new Meta;
+        $return = new self();
+        $return->currentSong = new CurrentSong();
+        $return->listeners = new Listeners();
+        $return->meta = new Meta();
 
         return $return;
     }
@@ -95,7 +95,7 @@ final class Result
 
     public static function fromArray(array $np): self
     {
-        $result = new self;
+        $result = new self();
 
         $currentSong = $np['currentSong'] ?? $np['current_song'] ?? [];
         $result->currentSong = new CurrentSong(

@@ -1,12 +1,8 @@
-version: '2.2'
-
 services:
   cli:
-    image: azuracast/azuracast_testing:latest
+    image: azuracast/nowplaying:latest
+    build:
+      context: .
     volumes:
       - ./:/app
-      - composer_data:/tmp
     command: composer test
-
-volumes:
-  composer_data: {}

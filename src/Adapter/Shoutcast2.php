@@ -20,7 +20,7 @@ final class Shoutcast2 extends AdapterAbstract
             $promises = [
                 self::PROMISE_NOW_PLAYING => $this->getAdminNowPlaying($mount)->then(
                     fn(?Result $result) => $result ?? $this->getPublicNowPlaying($mount)
-                )
+                ),
             ];
 
             if ($includeClients) {
@@ -87,7 +87,7 @@ final class Shoutcast2 extends AdapterAbstract
         $currentSongText = (string)$xml->SONGTITLE;
         $currentSongText = str_replace('   ', ' - ', $currentSongText);
 
-        $np = new Result;
+        $np = new Result();
         $np->currentSong = new CurrentSong(
             text: $currentSongText,
             delimiter: '-'
@@ -116,12 +116,12 @@ final class Shoutcast2 extends AdapterAbstract
         $request = $this->requestFactory->createRequest(
             'GET',
             $this->baseUri->withPath(
-                rtrim($this->baseUri->getPath(), '/').'/admin.cgi'
+                rtrim($this->baseUri->getPath(), '/') . '/admin.cgi'
             )->withQuery(http_build_query($query))
         );
 
         return $this->getUrl($request)->then(
-            function(?string $return_raw) use ($mount, $uniqueOnly) {
+            function (?string $return_raw) use ($mount, $uniqueOnly) {
                 if (empty($return_raw)) {
                     return [];
                 }
@@ -129,7 +129,7 @@ final class Shoutcast2 extends AdapterAbstract
                 try {
                     $listeners = json_decode($return_raw, true, 512, JSON_THROW_ON_ERROR);
                 } catch (JsonException $e) {
-                    $this->logger->error(
+                    $this->logError(
                         sprintf('JSON parsing error: %s', $e->getMessage()),
                         [
                             'exception' => $e,

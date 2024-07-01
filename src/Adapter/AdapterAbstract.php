@@ -16,6 +16,7 @@ use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use SimpleXMLElement;
 
 abstract class AdapterAbstract implements AdapterInterface
@@ -33,7 +34,8 @@ abstract class AdapterAbstract implements AdapterInterface
         protected RequestFactoryInterface $requestFactory,
         protected ClientInterface $client,
         protected LoggerInterface $logger,
-        UriInterface $baseUri
+        UriInterface $baseUri,
+        protected string $errorLogLevel = LogLevel::WARNING,
     ) {
         // Detect a username/password in the base URI itself.
         $uriUserInfo = $baseUri->getUserInfo();
@@ -130,12 +132,12 @@ abstract class AdapterAbstract implements AdapterInterface
         return $this->client->sendAsync(
             $request,
             [
-                RequestOptions::HTTP_ERRORS => false
+                RequestOptions::HTTP_ERRORS => false,
             ]
         )->then(
-            function(ResponseInterface $response) use ($request) {
+            function (ResponseInterface $response) use ($request) {
                 if ($response->getStatusCode() !== 200) {
-                    $this->logger->error(
+                    $this->logError(
                         sprintf('Request returned status code %d.', $response->getStatusCode()),
                         [
                             'body' => (string)$request->getBody(),
@@ -169,7 +171,7 @@ abstract class AdapterAbstract implements AdapterInterface
 
         if ('' !== $path) {
             $uri = $uri->withPath(
-                rtrim($uri->getPath(), '/').$path
+                rtrim($uri->getPath(), '/') . $path
             );
         }
         if (0 !== count($query)) {
@@ -193,13 +195,13 @@ abstract class AdapterAbstract implements AdapterInterface
                     $exception = $promises[self::PROMISE_NOW_PLAYING]['reason'] ?? null;
 
                     if ($exception instanceof \Exception) {
-                        $this->logger->error(
+                        $this->logError(
                             sprintf(
                                 'NowPlaying request encountered an exception: %s',
                                 $exception->getMessage()
                             ),
                             [
-                                'exception' => $exception
+                                'exception' => $exception,
                             ]
                         );
                     }
@@ -276,7 +278,7 @@ abstract class AdapterAbstract implements AdapterInterface
 
             libxml_clear_errors();
 
-            $this->logger->error(
+            $this->logError(
                 'Error parsing XML response.',
                 [
                     'response' => $xmlString,
@@ -287,5 +289,21 @@ abstract class AdapterAbstract implements AdapterInterface
         }
 
         return $xml;
+    }
+
+    /**
+     * @param string|\Stringable $message
+     * @param mixed[] $context
+     * @return void
+     */
+    protected function logError(
+        string|\Stringable $message,
+        array $context = []
+    ): void {
+        $this->logger->log(
+            $this->errorLogLevel,
+            $message,
+            $context
+        );
     }
 }

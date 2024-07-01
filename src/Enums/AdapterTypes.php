@@ -20,7 +20,7 @@ enum AdapterTypes: string
      */
     public function getAdapterClass(): string
     {
-        return match($this) {
+        return match ($this) {
             self::Icecast => Icecast::class,
             self::Shoutcast1 => Shoutcast1::class,
             self::Shoutcast2 => Shoutcast2::class

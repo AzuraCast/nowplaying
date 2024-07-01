@@ -13,6 +13,7 @@ use Psr\Http\Message\RequestFactoryInterface;
 use Psr\Http\Message\UriFactoryInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 use Psr\Log\NullLogger;
 
 class AdapterFactory
@@ -29,17 +30,20 @@ class AdapterFactory
         ?UriFactoryInterface $uriFactory = null,
         ?RequestFactoryInterface $requestFactory = null,
         ?ClientInterface $client = null,
-        ?LoggerInterface $logger = null
+        ?LoggerInterface $logger = null,
+        protected string $errorLogLevel = LogLevel::WARNING
     ) {
-        if ((null === $uriFactory || null === $requestFactory || null === $client)
-            && !class_exists(Psr17FactoryDiscovery::class)) {
+        if (
+            (null === $uriFactory || null === $requestFactory || null === $client)
+            && !class_exists(Psr17FactoryDiscovery::class)
+        ) {
             throw new \InvalidArgumentException('No auto-discovery mechanism available for PSR factories.');
         }
 
         $this->uriFactory = $uriFactory ?? Psr17FactoryDiscovery::findUriFactory();
         $this->requestFactory = $requestFactory ?? Psr17FactoryDiscovery::findRequestFactory();
         $this->client = $client ?? new Client();
-        $this->logger = $logger ?? new NullLogger;
+        $this->logger = $logger ?? new NullLogger();
     }
 
     public function getAdapter(
@@ -55,7 +59,8 @@ class AdapterFactory
             $this->requestFactory,
             $this->client,
             $this->logger,
-            $baseUri
+            $baseUri,
+            $this->errorLogLevel
         );
     }
 

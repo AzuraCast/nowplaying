@@ -36,7 +36,7 @@ final class Shoutcast1 extends AdapterAbstract
         [$total_listeners, , , , $unique_listeners, $bitrate, $title] = explode(',', $return[1], 7);
 
         // Increment listener counts in the now playing data.
-        $np = new Result;
+        $np = new Result();
         $np->currentSong = new CurrentSong(
             text: $title,
             delimiter: '-'
@@ -52,6 +52,6 @@ final class Shoutcast1 extends AdapterAbstract
 
     public function getClientsAsync(?string $mount = null, bool $uniqueOnly = true): PromiseInterface
     {
-        throw new UnsupportedException;
+        throw new UnsupportedException();
     }
 }

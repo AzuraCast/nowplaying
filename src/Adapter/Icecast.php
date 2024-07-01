@@ -21,7 +21,7 @@ final class Icecast extends AdapterAbstract
             $promises = [
                 self::PROMISE_NOW_PLAYING => $this->getXmlNowPlaying($mount)->then(
                     fn(?Result $result) => $result ?? $this->getJsonNowPlaying($mount)
-                )
+                ),
             ];
 
             if ($includeClients) {
@@ -66,7 +66,7 @@ final class Icecast extends AdapterAbstract
         try {
             $return = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $e) {
-            $this->logger->error(
+            $this->logError(
                 sprintf('JSON parsing error: %s', $e->getMessage()),
                 [
                     'exception' => $e,
@@ -77,7 +77,7 @@ final class Icecast extends AdapterAbstract
         }
 
         if (!$return || !isset($return['icestats']['source'])) {
-            $this->logger->error(
+            $this->logError(
                 'Response does not contain a "source" listing; the stream may be hidden or misspelled.',
                 [
                     'response' => $payload,
@@ -89,7 +89,7 @@ final class Icecast extends AdapterAbstract
         $sources = $return['icestats']['source'];
         $mounts = key($sources) === 0 ? $sources : [$sources];
         if (count($mounts) === 0) {
-            $this->logger->error(
+            $this->logError(
                 'Remote server has no mount points listed.',
                 [
                     'response' => $payload,
@@ -100,7 +100,7 @@ final class Icecast extends AdapterAbstract
 
         $npReturn = [];
         foreach ($mounts as $row) {
-            $np = new Result;
+            $np = new Result();
             $np->currentSong = new CurrentSong(
                 $row['yp_currently_playing'] ?? '',
                 $row['title'] ?? '',
@@ -163,7 +163,7 @@ final class Icecast extends AdapterAbstract
 
         $mount = $xml->xpath($mountSelector);
         if (empty($mount)) {
-            $this->logger->error(
+            $this->logError(
                 'Remote server has no mount points listed.',
                 [
                     'response' => $payload,
@@ -174,7 +174,7 @@ final class Icecast extends AdapterAbstract
 
         $row = $mount[0];
 
-        $np = new Result;
+        $np = new Result();
         $artist = (string)$row->artist;
         $title = (string)$row->title;
         $np->currentSong = new CurrentSong(
@@ -204,7 +204,7 @@ final class Icecast extends AdapterAbstract
     public function getClientsAsync(?string $mount = null, bool $uniqueOnly = true): PromiseInterface
     {
         if (empty($mount)) {
-            $this->logger->error('This adapter requires a mount point name.');
+            $this->logError('This adapter requires a mount point name.');
             return Create::promiseFor([]);
         }
 
@@ -219,7 +219,7 @@ final class Icecast extends AdapterAbstract
         );
 
         return $this->getUrl($request)->then(
-            function(?string $returnRaw) use ($mount, $uniqueOnly) {
+            function (?string $returnRaw) use ($mount, $uniqueOnly) {
                 if (empty($returnRaw)) {
                     return [];
                 }

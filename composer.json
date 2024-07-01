@@ -18,16 +18,35 @@
         "roave/security-advisories": "dev-latest",
         "php-parallel-lint/php-console-highlighter": "^1",
         "php-parallel-lint/php-parallel-lint": "^1.3",
-        "php-http/discovery": "^1.9"
+        "php-http/discovery": "^1.9",
+        "squizlabs/php_codesniffer": "^3.10",
+        "slevomat/coding-standard": "^8.15",
+        "staabm/annotate-pull-request-from-checkstyle": "^1.8"
     },
     "scripts": {
-        "test": [
-            "@composer install",
-            "@phplint",
-            "@phpstan"
+        "cleanup-and-test": [
+          "@phpcbf",
+          "@dev-test"
         ],
+        "test": [
+          "@composer install",
+          "@dev-test"
+        ],
+        "dev-test": [
+          "@phplint",
+          "@phpstan",
+          "@phpcs"
+        ],
+        "phpcbf": "phpcbf",
+        "phpcs": "phpcs",
         "phplint": "parallel-lint . --exclude vendor",
-        "phpstan": "phpstan analyze"
+        "phpstan": "phpstan analyze --memory-limit=-1",
+        "ci": [
+          "@composer install",
+          "parallel-lint . --exclude vendor --checkstyle | cs2pr",
+          "phpstan analyze --memory-limit=-1 --error-format=checkstyle | cs2pr",
+          "phpcs --report=checkstyle | cs2pr"
+        ]
     },
     "authors": [
         {
@@ -43,7 +62,8 @@
     "config": {
         "preferred-install": "dist",
         "allow-plugins": {
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "dealerdirect/phpcodesniffer-composer-installer": true
         }
     },
     "prefer-stable": true,
