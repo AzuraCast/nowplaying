@@ -33,7 +33,7 @@ final class Shoutcast1 extends AdapterAbstract
         }
 
         preg_match("/<body.*>(.*)<\/body>/smU", $returnRaw, $return);
-        [$total_listeners, , , , $unique_listeners, $bitrate, $title] = explode(',', $return[1], 7);
+        [$total_listeners, , , , $unique_listeners, $bitrate, $title] = explode(',', $return[1] ?? '', 7);
 
         // Increment listener counts in the now playing data.
         $np = new Result();

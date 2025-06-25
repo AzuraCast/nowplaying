@@ -12,37 +12,47 @@ final class CurrentSong
 
     public string $artist;
 
+    public string $album;
+
     public function __construct(
         string $text = '',
         string $title = '',
         string $artist = '',
+        string $album = '',
         string $delimiter = ' - '
     ) {
         $text = $this->cleanUpString($text);
         $title = $this->cleanUpString($title);
         $artist = $this->cleanUpString($artist);
+        $album = $this->cleanUpString($album);
 
         if (empty($text) && (!empty($title) || !empty($artist))) {
             $textParts = [$artist, $title];
             $text = implode(' - ', array_filter($textParts));
         }
 
-        if (!empty($text) && (empty($title) || empty($artist))) {
-            /** @var non-empty-string $delimiter */
-            $string_parts = explode($delimiter, $text);
+        if (!empty($text) && (empty($title) || empty($artist) || empty($album))) {
+            if (str_contains($text, $delimiter)) {
+                /** @var non-empty-string $delimiter */
+                $stringParts = explode($delimiter, $text);
 
-            // If not normally delimited, return "text" only.
-            if (\count($string_parts) === 1) {
-                $title = $text;
+                if (count($stringParts) >= 2) {
+                    $artist = array_shift($stringParts);
+                }
+                if (count($stringParts) >= 2) {
+                    $album = array_shift($stringParts);
+                }
+
+                $title = implode($delimiter, $stringParts);
             } else {
-                $title = trim(implode($delimiter, array_slice($string_parts, 1)));
-                $artist = trim($string_parts[0]);
+                $title = $text;
             }
         }
 
         $this->text = $text;
         $this->title = $title;
         $this->artist = $artist;
+        $this->album = $album;
     }
 
     protected function cleanUpString(string $value): string

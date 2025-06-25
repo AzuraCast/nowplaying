@@ -104,7 +104,8 @@ final class Icecast extends AdapterAbstract
             $np->currentSong = new CurrentSong(
                 $row['yp_currently_playing'] ?? '',
                 $row['title'] ?? '',
-                $row['artist'] ?? ''
+                $row['artist'] ?? '',
+                $row['album'] ?? '',
             );
 
             $bitrate = $row['audio_bitrate'] ?? $row['bitrate'] ?? null;
@@ -177,10 +178,13 @@ final class Icecast extends AdapterAbstract
         $np = new Result();
         $artist = (string)$row->artist;
         $title = (string)$row->title;
+        $album = (string)$row->album;
+
         $np->currentSong = new CurrentSong(
             '',
             $title,
-            $artist
+            $artist,
+            $album
         );
 
         $bitrate = max(

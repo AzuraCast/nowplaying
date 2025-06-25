@@ -101,7 +101,8 @@ final class Result
         $result->currentSong = new CurrentSong(
             $currentSong['text'] ?? '',
             $currentSong['title'] ?? '',
-            $currentSong['artist'] ?? ''
+            $currentSong['artist'] ?? '',
+            $currentSong['album'] ?? '',
         );
 
         $listeners = $np['listeners'];
