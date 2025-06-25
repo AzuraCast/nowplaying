@@ -24,4 +24,4 @@ jobs:
 
       - name: Run CI Test Suite
         run: |
-          docker-compose run --rm cli composer run ci
+          docker compose run --rm cli composer run ci
