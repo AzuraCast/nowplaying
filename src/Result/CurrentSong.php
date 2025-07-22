@@ -31,16 +31,13 @@ final class CurrentSong
             $text = implode(' - ', array_filter($textParts));
         }
 
-        if (!empty($text) && (empty($title) || empty($artist) || empty($album))) {
+        if (!empty($text) && (empty($title) || empty($artist))) {
             if (str_contains($text, $delimiter)) {
                 /** @var non-empty-string $delimiter */
                 $stringParts = explode($delimiter, $text);
 
                 if (count($stringParts) >= 2) {
                     $artist = array_shift($stringParts);
-                }
-                if (count($stringParts) >= 2) {
-                    $album = array_shift($stringParts);
                 }
 
                 $title = implode($delimiter, $stringParts);
